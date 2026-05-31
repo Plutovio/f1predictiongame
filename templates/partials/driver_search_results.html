@@ -1,0 +1,29 @@
+{% for entry in standings %}
+<tr class="hover:bg-white/5 transition-colors group border-l-4" {% if entry.team %}style="border-left-color: {{ entry.team.color_primary }};"{% endif %}>
+    <td class="py-4 px-6 text-center">
+        <span class="text-xl font-mono font-bold {% if entry.position == 1 %}text-[#FFD700]{% elif entry.position == 2 %}text-[#C0C0C0]{% elif entry.position == 3 %}text-[#CD7F32]{% endif %}">{{ entry.position }}</span>
+    </td>
+    <td class="py-4 px-6">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center bg-black/30 overflow-hidden hidden sm:flex" {% if entry.team %}style="border: 2px solid {{ entry.team.color_primary }}"{% else %}style="border: 2px solid rgba(255,255,255,0.2)"{% endif %}>
+                <span class="text-xs font-bold">{{ entry.driver.abbreviation }}</span>
+            </div>
+            <div>
+                <div class="font-bold text-white text-base md:text-lg flex items-center gap-2">
+                    <span class="hidden md:inline text-white/60 font-normal">{{ entry.driver.first_name }}</span>
+                    <span>{{ entry.driver.last_name }}</span>
+                </div>
+                <div class="text-xs text-[#8B8B9A] sm:hidden">{{ entry.team.short_name|default:"—" }}</div>
+            </div>
+        </div>
+    </td>
+    <td class="py-4 px-6 hidden sm:table-cell font-medium" {% if entry.team %}style="color: {{ entry.team.color_primary }}"{% endif %}>{{ entry.team.short_name|default:"—" }}</td>
+    <td class="py-4 px-6 text-center font-mono text-white/80">{{ entry.wins|default:"0" }}</td>
+    <td class="py-4 px-6 text-center font-mono text-white/80">{{ entry.podiums|default:"0" }}</td>
+    <td class="py-4 px-6 text-right font-mono text-xl font-bold text-white">{{ entry.points|floatformat:0 }}</td>
+</tr>
+{% empty %}
+<tr>
+    <td colspan="6" class="py-8 text-center text-[#8B8B9A]">No drivers found.</td>
+</tr>
+{% endfor %}

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Profile | F1 Predictor{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="mb-8">
+        <div class="flex items-center gap-3 mb-2">
+            <a href="{% url 'profile' %}" class="text-[#8B8B9A] hover:text-white transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            </a>
+            <h1 class="text-3xl font-bold">Edit Profile</h1>
+        </div>
+    </div>
+
+    <div class="glass rounded-2xl p-8 border border-white/10">
+        <form method="post" action="{% url 'profile_edit' %}" class="space-y-6">
+            {% csrf_token %}
+            
+            <div class="border-b border-white/10 pb-6">
+                <h3 class="text-lg font-semibold mb-4 text-white">Basic Information</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-[#8B8B9A] mb-1.5">Username</label>
+                        <input type="text" name="username" value="{{ user.username }}" class="w-full bg-black/40 border border-white/10 rounded-lg py-2 px-3 text-white focus:border-[#E10600] focus:ring-1 focus:ring-[#E10600] outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-[#8B8B9A] mb-1.5">Email Address</label>
+                        <input type="email" name="email" value="{{ user.email }}" class="w-full bg-black/40 border border-white/10 rounded-lg py-2 px-3 text-white focus:border-[#E10600] focus:ring-1 focus:ring-[#E10600] outline-none">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border-b border-white/10 pb-6">
+                <h3 class="text-lg font-semibold mb-4 text-white">Preferences</h3>
+                
+                <div>
+                    <label class="block text-sm font-medium text-[#8B8B9A] mb-1.5">Favorite Team</label>
+                    <select name="favorite_team" class="w-full md:w-1/2 bg-black/40 border border-white/10 rounded-lg py-2 px-3 text-white focus:border-[#E10600] focus:ring-1 focus:ring-[#E10600] outline-none appearance-none">
+                        <option value="">None</option>
+                        <option value="redbull">Red Bull Racing</option>
+                        <option value="ferrari" selected>Ferrari</option>
+                        <option value="mercedes">Mercedes</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="flex justify-end gap-4 pt-2">
+                <a href="{% url 'profile' %}" class="px-6 py-2.5 rounded-lg border border-white/10 text-white hover:bg-white/5 transition-colors font-semibold">
+                    Cancel
+                </a>
+                <button type="submit" class="px-6 py-2.5 rounded-lg bg-[#E10600] text-white hover:bg-red-700 transition-colors font-bold shadow-lg shadow-red-500/20">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

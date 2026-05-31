@@ -1,0 +1,90 @@
+<nav class="sticky top-0 z-40 glass w-full border-b border-white/10" x-data="{ mobileMenuOpen: false, userMenuOpen: false }">
+    <div class="container mx-auto px-4">
+        <div class="flex justify-between items-center h-16">
+            <a href="{% url 'dashboard' %}" class="flex items-center gap-2 flex-shrink-0 group">
+                <div class="w-8 h-8 bg-[#E10600] rounded flex items-center justify-center transform group-hover:scale-105 transition-transform">
+                    <span class="text-white font-bold text-lg leading-none">F1</span>
+                </div>
+                <span class="font-bold text-xl tracking-tight hidden sm:block group-hover:text-[#E10600] transition-colors">Predictor</span>
+            </a>
+            
+            <div class="hidden md:flex items-center gap-6">
+                <a href="{% url 'dashboard' %}" class="text-sm font-semibold text-white/80 hover:text-white transition-colors {% if request.resolver_match.url_name == 'dashboard' %}text-[#E10600]{% endif %}">Dashboard</a>
+                <a href="{% url 'user_predictions_list' %}" class="text-sm font-semibold text-white/80 hover:text-white transition-colors {% if request.resolver_match.url_name == 'user_predictions_list' %}text-[#E10600]{% endif %}">My Predictions</a>
+                <a href="{% url 'driver_standings' %}" class="text-sm font-semibold text-white/80 hover:text-white transition-colors {% if request.resolver_match.url_name == 'driver_standings' %}text-[#E10600]{% endif %}">Standings</a>
+                <a href="{% url 'race_calendar' %}" class="text-sm font-semibold text-white/80 hover:text-white transition-colors {% if request.resolver_match.url_name == 'race_calendar' %}text-[#E10600]{% endif %}">Calendar</a>
+                <a href="{% url 'prediction_leaderboard' %}" class="text-sm font-semibold text-white/80 hover:text-white transition-colors {% if request.resolver_match.url_name == 'prediction_leaderboard' %}text-[#E10600]{% endif %}">Leaderboard</a>
+                <a href="{% url 'analytics' %}" class="text-sm font-semibold text-white/80 hover:text-white transition-colors {% if request.resolver_match.url_name == 'analytics' %}text-[#E10600]{% endif %}">Analytics</a>
+            </div>
+            
+            <div class="hidden md:flex items-center gap-4">
+                {% if user.is_authenticated %}
+                <div class="relative">
+                    <button @click="userMenuOpen = !userMenuOpen" @click.away="userMenuOpen = false" class="flex items-center gap-2 hover:bg-white/5 p-1 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#E10600]">
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-[#00D2BE] to-blue-500 flex items-center justify-center border border-white/20">
+                            <span class="text-xs font-bold text-white">{{ user.username|make_list|first|upper }}</span>
+                        </div>
+                    </button>
+                    
+                    <div x-show="userMenuOpen" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="transform opacity-0 scale-95" x-transition:enter-end="transform opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="transform opacity-100 scale-100" x-transition:leave-end="transform opacity-0 scale-95" class="absolute right-0 mt-2 w-48 rounded-xl glass py-1 shadow-xl z-50 border border-white/10" x-cloak>
+                        <div class="px-4 py-2 border-b border-white/10">
+                            <p class="text-sm font-semibold text-white truncate">{{ user.username }}</p>
+                            <p class="text-xs text-[#8B8B9A] truncate">{{ user.email }}</p>
+                        </div>
+                        <a href="{% url 'profile' %}" class="block px-4 py-2 text-sm text-white/80 hover:bg-white/10 hover:text-white transition-colors">Profile</a>
+                        <form method="post" action="{% url 'logout' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-[#E10600] hover:bg-white/10 transition-colors">Sign out</button>
+                        </form>
+                    </div>
+                </div>
+                {% else %}
+                <a href="{% url 'login' %}" class="text-sm font-semibold text-white/80 hover:text-white transition-colors">Log in</a>
+                <a href="{% url 'signup' %}" class="text-sm font-semibold bg-[#E10600] text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors shadow-lg shadow-red-500/20">Sign up</a>
+                {% endif %}
+            </div>
+
+            <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden p-2 text-white/80 hover:text-white focus:outline-none">
+                <svg x-show="!mobileMenuOpen" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                <svg x-show="mobileMenuOpen" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" x-cloak><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Mobile Menu -->
+    <div x-show="mobileMenuOpen" x-transition.opacity class="md:hidden glass border-t border-white/10" x-cloak>
+        <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+            <a href="{% url 'dashboard' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10">Dashboard</a>
+            <a href="{% url 'user_predictions_list' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white/80 hover:text-white hover:bg-white/10">My Predictions</a>
+            <a href="{% url 'driver_standings' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white/80 hover:text-white hover:bg-white/10">Standings</a>
+            <a href="{% url 'race_calendar' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white/80 hover:text-white hover:bg-white/10">Calendar</a>
+            <a href="{% url 'prediction_leaderboard' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white/80 hover:text-white hover:bg-white/10">Leaderboard</a>
+            <a href="{% url 'analytics' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white/80 hover:text-white hover:bg-white/10">Analytics</a>
+        </div>
+        <div class="pt-4 pb-3 border-t border-white/10">
+            {% if user.is_authenticated %}
+            <div class="flex items-center px-5 gap-3">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-[#00D2BE] to-blue-500 flex items-center justify-center">
+                    <span class="text-sm font-bold text-white">{{ user.username|make_list|first|upper }}</span>
+                </div>
+                <div>
+                    <div class="text-base font-medium text-white">{{ user.username }}</div>
+                    <div class="text-sm font-medium text-[#8B8B9A]">{{ user.email }}</div>
+                </div>
+            </div>
+            <div class="mt-3 px-2 space-y-1">
+                <a href="{% url 'profile' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white/80 hover:text-white hover:bg-white/10">Profile</a>
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-[#E10600] hover:bg-white/10">Sign out</button>
+                </form>
+            </div>
+            {% else %}
+            <div class="px-5 space-y-2">
+                <a href="{% url 'login' %}" class="block w-full text-center px-4 py-2 rounded-md text-base font-medium text-white border border-white/20 hover:bg-white/10">Log in</a>
+                <a href="{% url 'signup' %}" class="block w-full text-center px-4 py-2 rounded-md text-base font-medium bg-[#E10600] text-white hover:bg-red-700">Sign up</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</nav>

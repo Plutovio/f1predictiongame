@@ -1,0 +1,44 @@
+<div class="overflow-x-auto">
+    <table class="w-full text-left border-collapse min-w-[600px]">
+        <thead>
+            <tr class="border-b border-white/10 bg-black/20 text-xs uppercase tracking-wider text-[#8B8B9A]">
+                <th class="py-3 px-4 font-semibold w-16 text-center">Pos</th>
+                <th class="py-3 px-4 font-semibold">Driver</th>
+                <th class="py-3 px-4 font-semibold">Team</th>
+                <th class="py-3 px-4 font-semibold text-right">Q1 Time</th>
+                <th class="py-3 px-4 font-semibold text-right">Q2 Time</th>
+                <th class="py-3 px-4 font-semibold text-right">Q3 Time</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-white/5">
+            {% for result in results %}
+            <tr class="hover:bg-white/5 transition-colors">
+                <td class="py-3 px-4 text-center font-mono font-bold text-white/80">
+                    {{ result.position }}
+                </td>
+                <td class="py-3 px-4 font-bold text-white">
+                    {{ result.driver.first_name }} {{ result.driver.last_name }}
+                </td>
+                <td class="py-3 px-4 font-medium" style="color: {{ result.team.color_primary|default:'#F1F1F1' }};">
+                    {{ result.team.name }}
+                </td>
+                <td class="py-3 px-4 text-right font-mono text-white/60">
+                    {{ result.formatted_q1|default:"—" }}
+                </td>
+                <td class="py-3 px-4 text-right font-mono text-white/60">
+                    {{ result.formatted_q2|default:"—" }}
+                </td>
+                <td class="py-3 px-4 text-right font-mono font-bold text-[#00D2BE]">
+                    {{ result.formatted_q3|default:"—" }}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="py-12 text-center text-[#8B8B9A]">
+                    <p class="text-lg">No qualifying results available yet.</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

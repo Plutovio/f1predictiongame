@@ -1,0 +1,71 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}F1 Predictor{% endblock %}</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Titillium+Web:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://unpkg.com/htmx.org@2.0.0"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.x.x/dist/chart.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+    
+    <link rel="stylesheet" href="{% static 'css/output.css' %}">
+    <style>
+        body { font-family: 'Titillium Web', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .glass-hover:hover { background: rgba(255, 255, 255, 0.1); }
+        
+        [x-cloak] { display: none !important; }
+        
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-[#15151E] text-[#F1F1F1] min-h-screen flex flex-col antialiased selection:bg-[#E10600] selection:text-white"
+      hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+    
+    {% include 'components/navbar.html' %}
+    
+    <main class="flex-grow container mx-auto px-4 py-8 fade-in">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <footer class="mt-auto py-8 border-t border-white/10 glass">
+        <div class="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-2">
+                <span class="text-[#E10600] font-bold text-xl">F1</span>
+                <span class="font-semibold text-white/80">Predictor</span>
+            </div>
+            <p class="text-sm text-[#8B8B9A]">&copy; {% now "Y" %} F1 Predictor. Not affiliated with Formula 1.</p>
+            <div class="flex gap-4">
+                <a href="#" class="text-[#8B8B9A] hover:text-white transition-colors">Twitter</a>
+                <a href="#" class="text-[#8B8B9A] hover:text-white transition-colors">GitHub</a>
+            </div>
+        </div>
+    </footer>
+
+    <div class="fixed bottom-4 right-4 z-50 flex flex-col gap-2" id="toast-container">
+        {% if messages %}
+            {% for message in messages %}
+                {% include 'components/toast.html' with message=message %}
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <script src="{% static 'js/app.js' %}"></script>
+    <script>
+        document.body.addEventListener('htmx:configRequest', (event) => {
+            event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

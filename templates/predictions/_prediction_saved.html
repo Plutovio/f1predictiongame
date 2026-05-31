@@ -1,0 +1,10 @@
+<!-- Prediction Saved Confirmation (HTMX) -->
+<div class="glass rounded-xl p-4 text-center animate-scale-in">
+    <div class="text-2xl mb-2">✅</div>
+    <p class="text-white font-medium">
+        Your {{ session_type }} prediction has been saved!
+    </p>
+    <p class="text-sm text-gray-400 mt-1">
+        {{ prediction.p1_driver.abbreviation }} · {{ prediction.p2_driver.abbreviation }} · {{ prediction.p3_driver.abbreviation }}
+    </p>
+</div>

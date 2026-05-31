@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | F1 Predictor{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-3xl md:text-4xl font-bold mb-2">Welcome back, <span class="text-[#E10600]">{{ user.username|default:"Racer" }}</span></h1>
+    <p class="text-[#8B8B9A] text-lg">Your Formula 1 predictions dashboard.</p>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+    <!-- Next Race Countdown Card -->
+    <div class="lg:col-span-2 glass rounded-2xl p-6 relative overflow-hidden group">
+        <div class="absolute inset-0 bg-gradient-to-br from-[#E10600]/20 to-transparent opacity-50"></div>
+        <div class="relative z-10">
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <h2 class="text-sm font-semibold text-[#8B8B9A] uppercase tracking-wider mb-1">Next Race</h2>
+                    <h3 class="text-2xl md:text-3xl font-bold">{{ next_race.name|default:"TBD Grand Prix" }}</h3>
+                    <p class="text-white/70 flex items-center gap-2 mt-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        {{ next_race.circuit_name|default:"Circuit TBA" }}
+                    </p>
+                </div>
+                <div class="text-4xl">{{ next_race.country_emoji|default:"🏁" }}</div>
+            </div>
+
+            <div class="grid grid-cols-4 gap-2 md:gap-4 mb-8" x-data="countdown('{{ next_race.race_date|date:'c' }}')" x-init="init()">
+                <div class="bg-black/30 backdrop-blur rounded-xl p-3 text-center border border-white/5">
+                    <div class="text-2xl md:text-4xl font-mono font-bold text-white" x-text="days">00</div>
+                    <div class="text-xs md:text-sm text-[#8B8B9A] uppercase mt-1">Days</div>
+                </div>
+                <div class="bg-black/30 backdrop-blur rounded-xl p-3 text-center border border-white/5">
+                    <div class="text-2xl md:text-4xl font-mono font-bold text-white" x-text="hours">00</div>
+                    <div class="text-xs md:text-sm text-[#8B8B9A] uppercase mt-1">Hours</div>
+                </div>
+                <div class="bg-black/30 backdrop-blur rounded-xl p-3 text-center border border-white/5">
+                    <div class="text-2xl md:text-4xl font-mono font-bold text-white" x-text="minutes">00</div>
+                    <div class="text-xs md:text-sm text-[#8B8B9A] uppercase mt-1">Mins</div>
+                </div>
+                <div class="bg-black/30 backdrop-blur rounded-xl p-3 text-center border border-white/5">
+                    <div class="text-2xl md:text-4xl font-mono font-bold text-[#E10600]" x-text="seconds">00</div>
+                    <div class="text-xs md:text-sm text-[#8B8B9A] uppercase mt-1">Secs</div>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4">
+                {% if next_race %}
+                <a href="{% url 'make_prediction' next_race.id %}" class="bg-[#E10600] hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-lg shadow-red-500/20">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                    Make Prediction
+                </a>
+                <a href="{% url 'race_detail' next_race.id %}" class="bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-6 rounded-lg transition-colors border border-white/10 flex items-center justify-center">
+                    Race Details
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Your Stats -->
+    <div class="glass rounded-2xl p-6 flex flex-col justify-between">
+        <div>
+            <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+                <svg class="w-5 h-5 text-[#00D2BE]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                Your Performance
+            </h2>
+            <div class="space-y-4">
+                <div class="flex justify-between items-end border-b border-white/10 pb-3">
+                    <span class="text-[#8B8B9A]">Total Points</span>
+                    <span class="text-2xl font-mono font-bold text-white">{{ user_stats.total_points|default:"0" }}</span>
+                </div>
+                <div class="flex justify-between items-end border-b border-white/10 pb-3">
+                    <span class="text-[#8B8B9A]">Global Rank</span>
+                    <span class="text-2xl font-mono font-bold text-[#FFD700]">#{{ user_stats.global_rank|default:"-" }}</span>
+                </div>
+                <div class="flex justify-between items-end border-b border-white/10 pb-3">
+                    <span class="text-[#8B8B9A]">Accuracy</span>
+                    <span class="text-xl font-mono font-bold text-white">{{ user_stats.accuracy|default:"0" }}%</span>
+                </div>
+            </div>
+        </div>
+        <a href="{% url 'analytics' %}" class="mt-6 text-sm text-center text-[#00D2BE] hover:text-white transition-colors block w-full py-2 bg-white/5 rounded-lg border border-white/10">
+            View Full Analytics
+        </a>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Standings HTMX Container -->
+    <div class="glass rounded-2xl p-6" hx-get="/partials/standings-mini/" hx-trigger="load" hx-swap="innerHTML">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-bold">Championship Top 5</h2>
+            <div class="animate-pulse w-24 h-4 bg-white/20 rounded"></div>
+        </div>
+        <div class="space-y-3">
+            {% for i in "12345"|make_list %}
+            <div class="h-12 bg-white/5 rounded-lg animate-pulse flex items-center px-4 gap-4 border border-white/5">
+                <div class="w-4 h-4 bg-white/20 rounded"></div>
+                <div class="w-8 h-8 rounded-full bg-white/20"></div>
+                <div class="w-32 h-4 bg-white/20 rounded flex-grow"></div>
+                <div class="w-12 h-4 bg-white/20 rounded"></div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Recent Activity / Results -->
+    <div class="glass rounded-2xl p-6 flex flex-col h-full">
+        <h2 class="text-xl font-bold mb-4">Recent Results</h2>
+        <div class="flex-grow flex items-center justify-center flex-col text-center" hx-get="/partials/recent-results/" hx-trigger="load" hx-swap="outerHTML">
+            <svg class="w-8 h-8 text-[#8B8B9A] animate-spin mb-3" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p class="text-[#8B8B9A]">Loading results...</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('countdown', (targetDate) => ({
+            days: '00', hours: '00', minutes: '00', seconds: '00',
+            target: new Date(targetDate).getTime(),
+            init() {
+                if (isNaN(this.target)) return;
+                this.update();
+                setInterval(() => this.update(), 1000);
+            },
+            update() {
+                const now = new Date().getTime();
+                const distance = this.target - now;
+                
+                if (distance < 0) {
+                    this.days = '00'; this.hours = '00'; this.minutes = '00'; this.seconds = '00';
+                    return;
+                }
+                
+                this.days = String(Math.floor(distance / (1000 * 60 * 60 * 24))).padStart(2, '0');
+                this.hours = String(Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))).padStart(2, '0');
+                this.minutes = String(Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60))).padStart(2, '0');
+                this.seconds = String(Math.floor((distance % (1000 * 60)) / 1000)).padStart(2, '0');
+            }
+        }));
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}F1 Season Analytics | F1 Predictor{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-3xl md:text-4xl font-bold mb-2">F1 Season Analytics</h1>
+    <p class="text-[#8B8B9A] text-lg">Championship progression, driver performance stats, and constructor analytics for the 2026 season.</p>
+</div>
+
+<!-- Key Performance Stats -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="glass p-5 rounded-2xl border border-white/10">
+        <div class="text-xs text-[#8B8B9A] uppercase tracking-wider mb-1">Races Run</div>
+        <div class="text-3xl font-mono font-bold text-[#00D2BE]">{{ stats_summary.completed_races }} / {{ stats_summary.total_races }}</div>
+    </div>
+    <div class="glass p-5 rounded-2xl border border-white/10">
+        <div class="text-xs text-[#8B8B9A] uppercase tracking-wider mb-1">Drivers Leader</div>
+        <div class="text-xl font-bold text-white truncate mt-1">{{ stats_summary.leader }}</div>
+    </div>
+    <div class="glass p-5 rounded-2xl border border-white/10">
+        <div class="text-xs text-[#8B8B9A] uppercase tracking-wider mb-1">Constructors Leader</div>
+        <div class="text-xl font-bold text-white truncate mt-1">{{ stats_summary.constructor_leader }}</div>
+    </div>
+    <div class="glass p-5 rounded-2xl border border-white/10">
+        <div class="text-xs text-[#8B8B9A] uppercase tracking-wider mb-1">Most Wins</div>
+        <div class="text-sm font-bold text-[#FFD700] truncate mt-2">{{ stats_summary.most_wins }}</div>
+    </div>
+</div>
+
+<!-- Charts Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <!-- Driver Points Progression Chart -->
+    <div class="glass p-6 rounded-2xl border border-white/10">
+        <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-[#E10600]"></span>
+            Driver Championship Points Progression
+        </h3>
+        <div class="h-[300px] w-full relative">
+            <canvas id="driverProgressionChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Constructor Points Progression Chart -->
+    <div class="glass p-6 rounded-2xl border border-white/10">
+        <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-[#00D2BE]"></span>
+            Constructor Championship Points Progression
+        </h3>
+        <div class="h-[300px] w-full relative">
+            <canvas id="constructorProgressionChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Wins & Podiums by Driver -->
+    <div class="glass p-6 rounded-2xl border border-white/10">
+        <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-[#FFD700]"></span>
+            Driver Wins vs. Podiums
+        </h3>
+        <div class="h-[280px] w-full relative">
+            <canvas id="winsPodiumsChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Constructor points distribution doughnut -->
+    <div class="glass p-6 rounded-2xl border border-white/10">
+        <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-[#8B8B9A]"></span>
+            Constructor Points Distribution (%)
+        </h3>
+        <div class="h-[280px] w-full relative flex justify-center">
+            <canvas id="constructorDistChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Stats Tables -->
+<div class="space-y-8 mb-8">
+    <!-- Drivers Stats Table -->
+    <div class="glass rounded-2xl border border-white/10 overflow-hidden">
+        <div class="p-6 bg-black/20 border-b border-white/10">
+            <h3 class="text-xl font-bold">F1 Drivers Performance Database</h3>
+            <p class="text-sm text-[#8B8B9A] mt-1">Detailed season metrics, average qualifying, finishes, DNFs, and fastest laps.</p>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse min-w-[800px]">
+                <thead>
+                    <tr class="border-b border-white/10 bg-black/40 text-xs uppercase tracking-wider text-[#8B8B9A]">
+                        <th class="py-3.5 px-4 font-semibold text-center w-12">Pos</th>
+                        <th class="py-3.5 px-4 font-semibold">Driver</th>
+                        <th class="py-3.5 px-4 font-semibold">Team</th>
+                        <th class="py-3.5 px-4 font-semibold text-center">Wins</th>
+                        <th class="py-3.5 px-4 font-semibold text-center">Podiums</th>
+                        <th class="py-3.5 px-4 font-semibold text-center">Avg Quali</th>
+                        <th class="py-3.5 px-4 font-semibold text-center">Avg Finish</th>
+                        <th class="py-3.5 px-4 font-semibold text-center">Fastest Laps</th>
+                        <th class="py-3.5 px-4 font-semibold text-center">DNFs</th>
+                        <th class="py-3.5 px-4 font-semibold text-right text-[#00D2BE]">Points</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5 font-mono text-sm">
+                    {% for entry in driver_stats %}
+                    <tr class="hover:bg-white/5 transition-colors">
+                        <td class="py-3 px-4 text-center font-bold text-white/80">{{ forloop.counter }}</td>
+                        <td class="py-3 px-4 font-sans font-bold text-white">{{ entry.driver.full_name }}</td>
+                        <td class="py-3 px-4 font-sans" style="color: {{ entry.team.color_primary|default:'#F1F1F1' }};">{{ entry.team.short_name }}</td>
+                        <td class="py-3 px-4 text-center">{{ entry.wins }}</td>
+                        <td class="py-3 px-4 text-center">{{ entry.podiums }}</td>
+                        <td class="py-3 px-4 text-center">{{ entry.avg_quali }}</td>
+                        <td class="py-3 px-4 text-center">{{ entry.avg_finish }}</td>
+                        <td class="py-3 px-4 text-center">{{ entry.fastest_laps }}</td>
+                        <td class="py-3 px-4 text-center text-red-400/80">{{ entry.dnfs }}</td>
+                        <td class="py-3 px-4 text-right font-bold text-white text-base">{{ entry.points|floatformat:0 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="10" class="py-12 text-center text-[#8B8B9A] font-sans">No driver standings data found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Constructors Standings Table -->
+    <div class="glass rounded-2xl border border-white/10 overflow-hidden">
+        <div class="p-6 bg-black/20 border-b border-white/10">
+            <h3 class="text-xl font-bold">Constructor Championship Standing</h3>
+            <p class="text-sm text-[#8B8B9A] mt-1">Constructor positions, total points, wins, and active driver squads.</p>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse min-w-[600px]">
+                <thead>
+                    <tr class="border-b border-white/10 bg-black/40 text-xs uppercase tracking-wider text-[#8B8B9A]">
+                        <th class="py-3.5 px-4 font-semibold text-center w-12">Pos</th>
+                        <th class="py-3.5 px-4 font-semibold">Constructor</th>
+                        <th class="py-3.5 px-4 font-semibold">Drivers Squad</th>
+                        <th class="py-3.5 px-4 text-center">Wins</th>
+                        <th class="py-3.5 px-4 text-center">Podiums</th>
+                        <th class="py-3.5 px-4 text-right text-[#00D2BE]">Points</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5 font-mono text-sm">
+                    {% for entry in constructor_standings %}
+                    <tr class="hover:bg-white/5 transition-colors">
+                        <td class="py-3 px-4 text-center font-bold text-white/80">{{ forloop.counter }}</td>
+                        <td class="py-3 px-4 font-sans font-bold" style="color: {{ entry.team.color_primary|default:'#F1F1F1' }};">{{ entry.team.name }}</td>
+                        <td class="py-3 px-4 font-sans text-xs text-[#8B8B9A]">
+                            {% for d in entry.drivers %}
+                            {{ d.abbreviation }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        </td>
+                        <td class="py-3 px-4 text-center">{{ entry.wins }}</td>
+                        <td class="py-3 px-4 text-center">{{ entry.podiums }}</td>
+                        <td class="py-3 px-4 text-right font-bold text-white text-base">{{ entry.points|floatformat:0 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="py-12 text-center text-[#8B8B9A] font-sans">No constructor standings data found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/charts.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof window.F1ChartFactory === 'undefined' || window.F1ChartFactory._unavailable) {
+            console.error('F1 Chart Factory not loaded.');
+            return;
+        }
+
+        // 1. Driver Points Progression Chart
+        try {
+            const driverProgData = JSON.parse('{{ driver_progression|escapejs }}');
+            if (driverProgData && driverProgData.labels && driverProgData.labels.length > 0) {
+                const datasets = driverProgData.datasets.map(ds => ({
+                    label: ds.label,
+                    data: ds.data,
+                    color: ds.borderColor
+                }));
+                window.F1ChartFactory.createPointsProgression('driverProgressionChart', driverProgData.labels, datasets);
+            }
+        } catch (e) {
+            console.error('Error rendering driver progression chart:', e);
+        }
+
+        // 2. Constructor Points Progression Chart
+        try {
+            const constProgData = JSON.parse('{{ constructor_progression|escapejs }}');
+            if (constProgData && constProgData.labels && constProgData.labels.length > 0) {
+                const datasets = constProgData.datasets.map(ds => ({
+                    label: ds.label,
+                    data: ds.data,
+                    color: ds.borderColor
+                }));
+                window.F1ChartFactory.createPointsProgression('constructorProgressionChart', constProgData.labels, datasets);
+            }
+        } catch (e) {
+            console.error('Error rendering constructor progression chart:', e);
+        }
+
+        // 3. Driver Wins vs. Podiums Chart
+        try {
+            const winsPodiums = JSON.parse('{{ wins_podiums_data|escapejs }}');
+            const ctx = document.getElementById('winsPodiumsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: winsPodiums.labels,
+                    datasets: [
+                        {
+                            label: 'Wins',
+                            data: winsPodiums.wins,
+                            backgroundColor: 'rgba(255, 215, 0, 0.8)',
+                            borderColor: '#FFD700',
+                            borderWidth: 1,
+                            borderRadius: 4,
+                            barPercentage: 0.6,
+                            categoryPercentage: 0.7
+                        },
+                        {
+                            label: 'Podiums',
+                            data: winsPodiums.podiums,
+                            backgroundColor: 'rgba(0, 210, 190, 0.6)',
+                            borderColor: '#00D2BE',
+                            borderWidth: 1,
+                            borderRadius: 4,
+                            barPercentage: 0.6,
+                            categoryPercentage: 0.7
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#8B8B9A' }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: '#8B8B9A', precision: 0 },
+                            grid: { color: 'rgba(255, 255, 255, 0.04)' }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: { color: '#F1F1F1' }
+                        }
+                    }
+                }
+            });
+        } catch (e) {
+            console.error('Error rendering wins and podiums chart:', e);
+        }
+
+        // 4. Constructor Points Distribution Chart
+        try {
+            const constDist = JSON.parse('{{ constructor_dist_data|escapejs }}');
+            const ctx = document.getElementById('constructorDistChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: constDist.labels,
+                    datasets: [{
+                        data: constDist.points,
+                        backgroundColor: constDist.colors.map(c => c + 'CC'),
+                        borderColor: '#15151E',
+                        borderWidth: 2,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                color: '#F1F1F1',
+                                usePointStyle: true,
+                                padding: 12
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const val = context.parsed;
+                                    const pct = total > 0 ? Math.round((val / total) * 100) : 0;
+                                    return context.label + ': ' + val + ' pts (' + pct + '%)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        } catch (e) {
+            console.error('Error rendering constructor distribution chart:', e);
+        }
+    });
+</script>
+{% endblock %}

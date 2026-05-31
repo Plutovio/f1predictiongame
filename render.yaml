@@ -1,0 +1,52 @@
+databases:
+  - name: f1predictor-db
+    plan: free
+    databaseName: f1predictor
+    user: f1predictor
+
+services:
+  # Web Service
+  - type: web
+    name: f1predictor
+    env: python
+    plan: free
+    buildCommand: |
+      pip install -r requirements.txt &&
+      python manage.py collectstatic --noinput &&
+      python manage.py migrate
+    startCommand: gunicorn f1predictor.wsgi
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: f1predictor-db
+          property: connectionString
+      - key: DJANGO_SETTINGS_MODULE
+        value: f1predictor.settings.production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_HOSTS
+        value: .onrender.com
+      - key: DEBUG
+        value: "False"
+      - key: FASTF1_CACHE_DIR
+        value: /tmp/fastf1_cache
+
+  # Celery Worker (optional - requires paid plan for background workers)
+  # Uncomment if you have a paid Render plan
+  # - type: worker
+  #   name: f1predictor-worker
+  #   env: python
+  #   plan: starter
+  #   buildCommand: pip install -r requirements.txt
+  #   startCommand: celery -A f1predictor worker --loglevel=info
+  #   envVars:
+  #     - key: DATABASE_URL
+  #       fromDatabase:
+  #         name: f1predictor-db
+  #         property: connectionString
+  #     - key: DJANGO_SETTINGS_MODULE
+  #       value: f1predictor.settings.production
+  #     - key: SECRET_KEY
+  #       sync: false
+  #     - key: CELERY_BROKER_URL
+  #       value: redis://...  # Add your Redis URL

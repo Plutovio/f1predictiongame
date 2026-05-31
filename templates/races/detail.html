@@ -1,0 +1,390 @@
+{% extends "base.html" %}
+
+{% block title %}{{ race.name|default:"Race Details" }} | F1 Predictor{% endblock %}
+
+{% block content %}
+<div x-data="{
+    tab: 'schedule',
+    timeMode: 'track',
+    country: '{{ race.country|escapejs }}',
+    city: '{{ race.city|escapejs }}',
+    get trackTimezone() {
+        const c = this.country.toLowerCase().trim();
+        const cy = this.city ? this.city.toLowerCase().trim() : '';
+        
+        if (c === 'united states' || c === 'usa') {
+            if (cy.includes('miami')) return 'America/New_York';
+            if (cy.includes('austin')) return 'America/Chicago';
+            if (cy.includes('las vegas')) return 'America/Los_Angeles';
+            return 'America/New_York';
+        }
+        if (c === 'italy') {
+            return 'Europe/Rome';
+        }
+        
+        const mapping = {
+            'bahrain': 'Asia/Bahrain',
+            'saudi arabia': 'Asia/Riyadh',
+            'australia': 'Australia/Melbourne',
+            'japan': 'Asia/Tokyo',
+            'china': 'Asia/Shanghai',
+            'monaco': 'Europe/Monaco',
+            'spain': 'Europe/Madrid',
+            'canada': 'America/Toronto',
+            'austria': 'Europe/Vienna',
+            'united kingdom': 'Europe/London',
+            'great britain': 'Europe/London',
+            'belgium': 'Europe/Brussels',
+            'hungary': 'Europe/Budapest',
+            'netherlands': 'Europe/Amsterdam',
+            'azerbaijan': 'Asia/Baku',
+            'singapore': 'Asia/Singapore',
+            'mexico': 'America/Mexico_City',
+            'brazil': 'America/Sao_Paulo',
+            'qatar': 'Asia/Qatar',
+            'abu dhabi': 'Asia/Dubai',
+            'uae': 'Asia/Dubai'
+        };
+        return mapping[c] || 'UTC';
+    },
+    formatSession(utcString) {
+        if (!utcString) return { date: '', time: '' };
+        const dateObj = new Date(utcString);
+        if (isNaN(dateObj.getTime())) return { date: '', time: '' };
+        
+        const timeOptions = { hour: '2-digit', minute: '2-digit', hour12: false };
+        const dateOptions = { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' };
+        
+        if (this.timeMode === 'track') {
+            timeOptions.timeZone = this.trackTimezone;
+            dateOptions.timeZone = this.trackTimezone;
+        }
+        
+        const timeFormatter = new Intl.DateTimeFormat('en-US', timeOptions);
+        const dateFormatter = new Intl.DateTimeFormat('en-US', dateOptions);
+        
+        let suffix = 'Local';
+        if (this.timeMode === 'track') {
+            try {
+                const parts = new Intl.DateTimeFormat('en-US', {
+                    timeZone: this.trackTimezone,
+                    timeZoneName: 'short'
+                }).formatToParts(dateObj);
+                const tzPart = parts.find(p => p.type === 'timeZoneName');
+                suffix = tzPart ? tzPart.value : 'Track';
+            } catch (e) {
+                suffix = 'Track';
+            }
+        } else {
+            try {
+                const parts = new Intl.DateTimeFormat('en-US', {
+                    timeZoneName: 'short'
+                }).formatToParts(dateObj);
+                const tzPart = parts.find(p => p.type === 'timeZoneName');
+                suffix = tzPart ? tzPart.value : 'Local';
+            } catch (e) {
+                suffix = 'Local';
+            }
+        }
+        
+        return {
+            date: dateFormatter.format(dateObj),
+            time: timeFormatter.format(dateObj) + ' ' + suffix
+        };
+    }
+}">
+
+<!-- Race Header -->
+<div class="glass rounded-2xl overflow-hidden mb-8 border border-white/10 relative">
+    <div class="h-4 w-full bg-{{ race.accent_color|default:'[#E10600]' }}"></div>
+    <div class="p-6 md:p-8 relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div>
+            <div class="flex items-center gap-3 mb-2">
+                <span class="text-sm font-semibold text-black bg-[#00D2BE] px-2 py-1 rounded">ROUND {{ race.round_number|default:"1" }}</span>
+                {% if race.has_sprint %}
+                <span class="text-sm font-semibold text-black bg-[#FFD700] px-2 py-1 rounded">SPRINT WEEKEND</span>
+                {% endif %}
+            </div>
+            <h1 class="text-4xl md:text-5xl font-bold text-white mb-3">{{ race.name|default:"Grand Prix" }}</h1>
+            <div class="flex flex-col sm:flex-row gap-4 text-[#8B8B9A] text-lg">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">{{ race.country_emoji|default:"🏁" }}</span> {{ race.country|default:"Country" }}
+                </div>
+                <div class="hidden sm:block">&bull;</div>
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
+                    {{ race.circuit_name|default:"Circuit Name" }}
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-black/40 rounded-xl p-4 border border-white/5 text-center min-w-[150px]">
+            <div class="text-sm text-[#8B8B9A] uppercase tracking-wider mb-1">Race Date</div>
+            <div class="text-xl font-bold text-white" x-text="formatSession('{{ race.race_date|date:'Y-m-d\TH:i:s\Z' }}').date">{{ race.race_date|date:"d M Y"|default:"TBD" }}</div>
+            <div class="text-[#00D2BE] font-mono text-sm mt-1" x-text="formatSession('{{ race.race_date|date:'Y-m-d\TH:i:s\Z' }}').time">{{ race.race_date|date:"H:i" }} UTC</div>
+        </div>
+    </div>
+    <!-- Circuit map placeholder background -->
+    <div class="absolute right-0 top-0 h-full w-1/2 opacity-10 pointer-events-none" style="background-image: url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><path stroke=\"white\" stroke-width=\"2\" fill=\"none\" d=\"M20,50 Q30,20 60,30 T80,60 T40,80 T20,50\"/></svg>'); background-size: contain; background-repeat: no-repeat; background-position: right center;"></div>
+</div>
+
+<!-- Main Content with Tabs -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Left Column: Tabs & Content -->
+    <div class="lg:col-span-2 space-y-6">
+        <!-- Tab Navigation -->
+        <div class="flex overflow-x-auto gap-2 border-b border-white/10 pb-2 hide-scrollbar">
+            <button @click="tab = 'schedule'" :class="{ 'bg-white/10 text-white border-[#E10600]': tab === 'schedule', 'text-[#8B8B9A] hover:text-white hover:bg-white/5 border-transparent': tab !== 'schedule' }" class="px-5 py-2.5 rounded-t-lg font-semibold whitespace-nowrap border-b-2 transition-colors">
+                Schedule
+            </button>
+            <button @click="tab = 'qualifying'" :class="{ 'bg-white/10 text-white border-[#E10600]': tab === 'qualifying', 'text-[#8B8B9A] hover:text-white hover:bg-white/5 border-transparent': tab !== 'qualifying' }" class="px-5 py-2.5 rounded-t-lg font-semibold whitespace-nowrap border-b-2 transition-colors">
+                Qualifying
+            </button>
+            {% if race.has_sprint %}
+            <button @click="tab = 'sprint'" :class="{ 'bg-white/10 text-white border-[#E10600]': tab === 'sprint', 'text-[#8B8B9A] hover:text-white hover:bg-white/5 border-transparent': tab !== 'sprint' }" class="px-5 py-2.5 rounded-t-lg font-semibold whitespace-nowrap border-b-2 transition-colors">
+                Sprint
+            </button>
+            {% endif %}
+            <button @click="tab = 'race'" :class="{ 'bg-white/10 text-white border-[#E10600]': tab === 'race', 'text-[#8B8B9A] hover:text-white hover:bg-white/5 border-transparent': tab !== 'race' }" class="px-5 py-2.5 rounded-t-lg font-semibold whitespace-nowrap border-b-2 transition-colors">
+                Race Results
+            </button>
+        </div>
+
+        <!-- Tab Contents -->
+        <div class="glass p-6 rounded-2xl border border-white/10 min-h-[400px]">
+            <!-- Schedule Tab -->
+            <div x-show="tab === 'schedule'" x-transition.opacity class="space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <h3 class="text-xl font-bold">Weekend Schedule</h3>
+                    
+                    <!-- Timezone Toggle -->
+                    <div class="flex bg-black/40 p-1 rounded-lg border border-white/10 text-xs font-semibold">
+                        <button @click="timeMode = 'track'" 
+                                :class="timeMode === 'track' ? 'bg-[#E10600] text-white shadow' : 'text-[#8B8B9A] hover:text-white'"
+                                class="px-3 py-1.5 rounded transition-all duration-200 focus:outline-none">
+                            Track Time
+                        </button>
+                        <button @click="timeMode = 'local'" 
+                                :class="timeMode === 'local' ? 'bg-[#E10600] text-white shadow' : 'text-[#8B8B9A] hover:text-white'"
+                                class="px-3 py-1.5 rounded transition-all duration-200 focus:outline-none">
+                            Your Local Time
+                        </button>
+                    </div>
+                </div>
+                
+                {% if race.has_sprint %}
+                    <!-- FP1 -->
+                    {% if race.fp1_date %}
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-black/20 rounded-xl border border-white/5 hover:bg-white/5 transition-colors">
+                        <div>
+                            <div class="font-bold text-white text-lg">Free Practice 1</div>
+                            <div class="text-[#8B8B9A] text-sm" x-text="formatSession('{{ race.fp1_date|date:'Y-m-d\TH:i:s\Z' }}').date">{{ race.fp1_date|date:"l, M d, Y" }}</div>
+                        </div>
+                        <div class="font-mono text-xl text-[#00D2BE]" x-text="formatSession('{{ race.fp1_date|date:'Y-m-d\TH:i:s\Z' }}').time">{{ race.fp1_date|date:"H:i" }} UTC</div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Sprint Shootout -->
+                    {% if race.sprint_qualifying_date %}
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-black/20 rounded-xl border border-white/5 hover:bg-white/5 transition-colors">
+                        <div>
+                            <div class="font-bold text-white text-lg">Sprint Qualifying</div>
+                            <div class="text-[#8B8B9A] text-sm" x-text="formatSession('{{ race.sprint_qualifying_date|date:'Y-m-d\TH:i:s\Z' }}').date">{{ race.sprint_qualifying_date|date:"l, M d, Y" }}</div>
+                        </div>
+                        <div class="font-mono text-xl text-[#00D2BE]" x-text="formatSession('{{ race.sprint_qualifying_date|date:'Y-m-d\TH:i:s\Z' }}').time">{{ race.sprint_qualifying_date|date:"H:i" }} UTC</div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Sprint -->
+                    {% if race.sprint_date %}
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-black/20 rounded-xl border border-white/5 hover:bg-white/5 transition-colors">
+                        <div>
+                            <div class="font-bold text-[#FFD700] text-lg">Sprint Race</div>
+                            <div class="text-[#8B8B9A] text-sm" x-text="formatSession('{{ race.sprint_date|date:'Y-m-d\TH:i:s\Z' }}').date">{{ race.sprint_date|date:"l, M d, Y" }}</div>
+                        </div>
+                        <div class="font-mono text-xl text-[#00D2BE]" x-text="formatSession('{{ race.sprint_date|date:'Y-m-d\TH:i:s\Z' }}').time">{{ race.sprint_date|date:"H:i" }} UTC</div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Qualifying -->
+                    {% if race.qualifying_date %}
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-black/20 rounded-xl border border-white/5 hover:bg-white/5 transition-colors">
+                        <div>
+                            <div class="font-bold text-white text-lg">Qualifying</div>
+                            <div class="text-[#8B8B9A] text-sm" x-text="formatSession('{{ race.qualifying_date|date:'Y-m-d\TH:i:s\Z' }}').date">{{ race.qualifying_date|date:"l, M d, Y" }}</div>
+                        </div>
+                        <div class="font-mono text-xl text-[#00D2BE]" x-text="formatSession('{{ race.qualifying_date|date:'Y-m-d\TH:i:s\Z' }}').time">{{ race.qualifying_date|date:"H:i" }} UTC</div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Race -->
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-black/20 rounded-xl border border-white/5 hover:bg-white/5 transition-colors">
+                        <div>
+                            <div class="font-bold text-white text-lg">Grand Prix</div>
+                            <div class="text-[#8B8B9A] text-sm" x-text="formatSession('{{ race.race_date|date:'Y-m-d\TH:i:s\Z' }}').date">{{ race.race_date|date:"l, M d, Y" }}</div>
+                        </div>
+                        <div class="font-mono text-xl text-[#00D2BE]" x-text="formatSession('{{ race.race_date|date:'Y-m-d\TH:i:s\Z' }}').time">{{ race.race_date|date:"H:i" }} UTC</div>
+                    </div>
+                    
+                {% else %}
+                    <!-- FP1 -->
+                    {% if race.fp1_date %}
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-black/20 rounded-xl border border-white/5 hover:bg-white/5 transition-colors">
+                        <div>
+                            <div class="font-bold text-white text-lg">Free Practice 1</div>
+                            <div class="text-[#8B8B9A] text-sm" x-text="formatSession('{{ race.fp1_date|date:'Y-m-d\TH:i:s\Z' }}').date">{{ race.fp1_date|date:"l, M d, Y" }}</div>
+                        </div>
+                        <div class="font-mono text-xl text-[#00D2BE]" x-text="formatSession('{{ race.fp1_date|date:'Y-m-d\TH:i:s\Z' }}').time">{{ race.fp1_date|date:"H:i" }} UTC</div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- FP2 -->
+                    {% if race.fp2_date %}
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-black/20 rounded-xl border border-white/5 hover:bg-white/5 transition-colors">
+                        <div>
+                            <div class="font-bold text-white text-lg">Free Practice 2</div>
+                            <div class="text-[#8B8B9A] text-sm" x-text="formatSession('{{ race.fp2_date|date:'Y-m-d\TH:i:s\Z' }}').date">{{ race.fp2_date|date:"l, M d, Y" }}</div>
+                        </div>
+                        <div class="font-mono text-xl text-[#00D2BE]" x-text="formatSession('{{ race.fp2_date|date:'Y-m-d\TH:i:s\Z' }}').time">{{ race.fp2_date|date:"H:i" }} UTC</div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- FP3 -->
+                    {% if race.fp3_date %}
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-black/20 rounded-xl border border-white/5 hover:bg-white/5 transition-colors">
+                        <div>
+                            <div class="font-bold text-white text-lg">Free Practice 3</div>
+                            <div class="text-[#8B8B9A] text-sm" x-text="formatSession('{{ race.fp3_date|date:'Y-m-d\TH:i:s\Z' }}').date">{{ race.fp3_date|date:"l, M d, Y" }}</div>
+                        </div>
+                        <div class="font-mono text-xl text-[#00D2BE]" x-text="formatSession('{{ race.fp3_date|date:'Y-m-d\TH:i:s\Z' }}').time">{{ race.fp3_date|date:"H:i" }} UTC</div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Qualifying -->
+                    {% if race.qualifying_date %}
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-black/20 rounded-xl border border-white/5 hover:bg-white/5 transition-colors">
+                        <div>
+                            <div class="font-bold text-white text-lg">Qualifying</div>
+                            <div class="text-[#8B8B9A] text-sm" x-text="formatSession('{{ race.qualifying_date|date:'Y-m-d\TH:i:s\Z' }}').date">{{ race.qualifying_date|date:"l, M d, Y" }}</div>
+                        </div>
+                        <div class="font-mono text-xl text-[#00D2BE]" x-text="formatSession('{{ race.qualifying_date|date:'Y-m-d\TH:i:s\Z' }}').time">{{ race.qualifying_date|date:"H:i" }} UTC</div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Race -->
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-black/20 rounded-xl border border-white/5 hover:bg-white/5 transition-colors">
+                        <div>
+                            <div class="font-bold text-white text-lg">Grand Prix</div>
+                            <div class="text-[#8B8B9A] text-sm" x-text="formatSession('{{ race.race_date|date:'Y-m-d\TH:i:s\Z' }}').date">{{ race.race_date|date:"l, M d, Y" }}</div>
+                        </div>
+                        <div class="font-mono text-xl text-[#00D2BE]" x-text="formatSession('{{ race.race_date|date:'Y-m-d\TH:i:s\Z' }}').time">{{ race.race_date|date:"H:i" }} UTC</div>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- HTMX-loaded tabs: qualifying, sprint, race. -->
+            <div x-show="tab === 'qualifying'" x-transition.opacity x-cloak>
+                <div hx-get="{% url 'race_tab' race.id 'qualifying' %}" hx-trigger="intersect once" hx-indicator="#q-indicator">
+                    <div id="q-indicator" class="flex justify-center py-12"><svg class="animate-spin h-8 w-8 text-[#E10600]" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg></div>
+                    <!-- Fallback content -->
+                    <p class="text-center text-[#8B8B9A] py-8">Results not available yet.</p>
+                </div>
+            </div>
+
+            {% if race.has_sprint %}
+            <div x-show="tab === 'sprint'" x-transition.opacity x-cloak>
+                <div hx-get="{% url 'race_tab' race.id 'sprint' %}" hx-trigger="intersect once">
+                    <p class="text-center text-[#8B8B9A] py-8">Results not available yet.</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <div x-show="tab === 'race'" x-transition.opacity x-cloak>
+                <div hx-get="{% url 'race_tab' race.id 'race' %}" hx-trigger="intersect once">
+                    <p class="text-center text-[#8B8B9A] py-8">Results not available yet.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Predictions & Weather -->
+    <div class="space-y-6">
+        <!-- Prediction Status Card -->
+        <div class="glass p-6 rounded-2xl border border-white/10 {% if not race.is_locked %}border-[#00D2BE]/50 shadow-[0_0_15px_rgba(0,210,190,0.15)]{% endif %}">
+            <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                <svg class="w-5 h-5 text-[#E10600]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                Your Predictions
+            </h3>
+            
+            {% if race.status == 'completed' %}
+                <div class="text-center py-4">
+                    <div class="text-3xl font-mono font-bold text-[#00D2BE] mb-2">{{ prediction.points_earned|default:"0" }}</div>
+                    <div class="text-[#8B8B9A] text-sm uppercase tracking-wider mb-4">Points Earned</div>
+                    <a href="{% url 'prediction_results' race.id|default:1 %}" class="block w-full py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg text-center font-bold transition-colors">View Results</a>
+                </div>
+            {% else %}
+                {% if race.is_locked %}
+                    <div class="bg-black/30 rounded-xl p-4 mb-4 text-center border border-white/5">
+                        <svg class="w-8 h-8 text-[#8B8B9A] mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                        <p class="text-white font-semibold">Predictions Locked</p>
+                        <p class="text-xs text-[#8B8B9A] mt-1">Qualifying has started</p>
+                    </div>
+                    {% if prediction %}
+                        <a href="{% url 'prediction_results' race.id|default:1 %}" class="block w-full py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg text-center font-bold transition-colors">View Your Picks</a>
+                    {% endif %}
+                {% else %}
+                    <p class="text-[#8B8B9A] text-sm mb-6">Predict the top 3 finishers for Qualifying and the Race to earn points.</p>
+                    <a href="{% url 'make_prediction' race.id|default:1 %}" class="block w-full py-3 bg-[#E10600] hover:bg-red-700 text-white rounded-lg text-center font-bold transition-colors shadow-lg shadow-red-500/20">
+                        {% if prediction %}Edit Predictions{% else %}Make Predictions{% endif %}
+                    </a>
+                {% endif %}
+            {% endif %}
+        </div>
+
+        <!-- Weather Widget -->
+        <div class="glass p-6 rounded-2xl border border-white/10">
+            <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>
+                Weather Forecast
+            </h3>
+            
+            {% if weather %}
+            <div class="flex items-center justify-between mb-4">
+                <div class="text-4xl">{% if weather.rainfall %}🌧️{% else %}☀️{% endif %}</div>
+                <div class="text-right">
+                    <div class="text-3xl font-mono font-bold text-white">{{ weather.air_temp }}°C</div>
+                    <div class="text-[#8B8B9A] text-sm">Track: {{ weather.track_temp }}°C</div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
+                <div>
+                    <div class="text-xs text-[#8B8B9A] uppercase tracking-wider mb-1">Humidity</div>
+                    <div class="font-mono text-white font-semibold">{{ weather.humidity }}%</div>
+                </div>
+                <div>
+                    <div class="text-xs text-[#8B8B9A] uppercase tracking-wider mb-1">Wind Speed</div>
+                    <div class="font-mono text-white font-semibold">{{ weather.wind_speed }} km/h</div>
+                </div>
+            </div>
+            {% else %}
+                {% if race.is_completed %}
+                <div class="text-center py-6 text-[#8B8B9A]">
+                    <div class="text-4xl mb-3">🌤️</div>
+                    <p class="text-sm font-semibold text-white mb-1">Weather Data Unavailable</p>
+                    <p class="text-xs">Historical weather data could not be retrieved for this completed race.</p>
+                </div>
+                {% else %}
+                <div class="text-center py-6 text-[#8B8B9A]">
+                    <div class="text-4xl mb-3">🌤️</div>
+                    <p class="text-sm font-semibold text-white mb-1">Forecast Pending</p>
+                    <p class="text-xs">Weather forecasts will be available here once the race weekend starts.</p>
+                </div>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+</div>
+{% endblock %}

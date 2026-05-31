@@ -1,0 +1,23 @@
+<div>
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold">Championship Top 5</h2>
+        <a href="{% url 'driver_standings' %}" class="text-sm text-[#00D2BE] hover:text-white transition-colors">View All</a>
+    </div>
+    <div class="space-y-3">
+        {% for entry in driver_standings|slice:":5" %}
+        <div class="bg-black/30 rounded-lg flex items-center px-4 py-2 gap-4 border border-white/5 hover:bg-white/5 transition-colors">
+            <div class="text-lg font-mono font-bold {% if forloop.counter == 1 %}text-[#FFD700]{% elif forloop.counter == 2 %}text-[#C0C0C0]{% elif forloop.counter == 3 %}text-[#CD7F32]{% else %}text-[#8B8B9A]{% endif %}">{{ forloop.counter }}</div>
+            <div class="w-8 h-8 rounded-full flex items-center justify-center bg-[#15151E] overflow-hidden flex-shrink-0" {% if entry.team %}style="border: 2px solid {{ entry.team.color_primary }}"{% else %}style="border: 2px solid rgba(255,255,255,0.2)"{% endif %}>
+                <span class="text-xs font-bold">{{ entry.driver.abbreviation }}</span>
+            </div>
+            <div class="flex-grow min-w-0">
+                <div class="font-bold text-white truncate text-sm">{{ entry.driver.last_name }}</div>
+                <div class="text-xs text-[#8B8B9A] truncate">{{ entry.team.short_name|default:"—" }}</div>
+            </div>
+            <div class="font-mono text-white font-bold">{{ entry.points|floatformat:0 }}</div>
+        </div>
+        {% empty %}
+        <p class="text-sm text-[#8B8B9A]">No standings data yet. Season hasn't started.</p>
+        {% endfor %}
+    </div>
+</div>
