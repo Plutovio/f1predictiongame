@@ -190,18 +190,18 @@ class PredictionScorer:
 
 def get_leaderboard(season=2026):
     """Get prediction leaderboard for a season."""
-    from django.db.models import Sum, Count, Avg
+    from django.db.models import Sum, Count, Avg, Q
 
     leaderboard = PredictionScore.objects.filter(
         race__season=season
     ).values(
         'user__id', 'user__username'
     ).annotate(
-        total_points=Sum('total_points'),
+        total_pts=Sum('total_points'),
         predictions_count=Count('id'),
-        exact_podiums=Count('id', filter=models.Q(exact_podium_bonus=True)),
+        exact_podiums=Count('id', filter=Q(exact_podium_bonus=True)),
         avg_points=Avg('total_points'),
-    ).order_by('-total_points')
+    ).order_by('-total_pts')
 
     return leaderboard
 
