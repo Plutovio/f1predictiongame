@@ -1,6 +1,6 @@
 #!/bin/bash
 # start.sh — Render startup script
-# Runs migrations, seeds data, and starts the web server.
+# Runs migrations, seeds data, syncs results, and starts the web server.
 # This runs in the RUNTIME environment so DATABASE_URL is available.
 
 set -e  # Exit on any error
@@ -21,9 +21,9 @@ echo "[2/4] Seeding 2026 F1 season data..."
 python manage.py seed_2026
 echo "      Done."
 
-# 3. Sync race results and standings from FastF1 / Jolpica API
-echo "[3/4] Syncing F1 data (results + standings)..."
-python manage.py sync_f1_data --full || echo "      [WARN] Sync had issues — continuing startup"
+# 3. Sync race results from Jolpica API (lightweight HTTP, no FastF1 download)
+echo "[3/4] Syncing F1 race results from Jolpica API..."
+python manage.py sync_jolpica --all-rounds || echo "      [WARN] Sync had issues — continuing startup"
 echo "      Done."
 
 # 4. Start the production web server
