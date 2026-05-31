@@ -102,7 +102,8 @@ STORAGES = {
 WHITENOISE_MANIFEST_STRICT = False
 
 # Tailwind CSS configuration
-TAILWIND_CLI_SRC_CSS = "static/css/input.css"
+TAILWIND_CLI_VERSION = "4.0.0"
+TAILWIND_CLI_SRC_CSS = "css/input.css"
 TAILWIND_CLI_DIST_CSS = "css/output.css"
 
 # Media files
