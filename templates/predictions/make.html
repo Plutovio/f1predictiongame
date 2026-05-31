@@ -1,213 +1,386 @@
 {% extends "base.html" %}
+{% load f1_tags %}
 
 {% block title %}Make Predictions - {{ race.name }} | F1 Predictor{% endblock %}
+
+{% block extra_css %}
+<style>
+    .slot-container { min-height: 110px; transition: all 0.2s; }
+    .slot-container.drag-over { border-color: #E10600 !important; background: rgba(225,6,0,0.1); }
+    .slot-container.has-driver { background: rgba(255,255,255,0.07); }
+    .driver-chip { cursor: grab; touch-action: none; user-select: none; }
+    .driver-chip:active { cursor: grabbing; }
+    .sortable-ghost { opacity: 0.3; background: rgba(255,255,255,0.1); }
+    .sortable-drag { box-shadow: 0 20px 40px rgba(0,0,0,0.4); opacity: 0.95; cursor: grabbing; }
+    .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 10px; }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="mb-8">
     <div class="flex items-center gap-3 mb-2">
-        <a href="{% url 'race_detail' race.id|default:1 %}" class="text-[#8B8B9A] hover:text-white transition-colors">
+        <a href="{% url 'race_detail' race.id %}" class="text-[#8B8B9A] hover:text-white transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
         </a>
-        <h1 class="text-3xl md:text-4xl font-bold">Predict {{ race.name|default:"Grand Prix" }}</h1>
+        <h1 class="text-3xl md:text-4xl font-bold">{{ race.name }}</h1>
     </div>
-    <p class="text-[#8B8B9A] text-lg">Drag and drop drivers into the top 3 positions.</p>
+    <p class="text-[#8B8B9A] text-lg ml-8">Make your predictions — drag drivers into the top 3 positions.</p>
 </div>
 
-{% if is_locked %}
-<div class="glass border border-[#E10600] rounded-xl p-6 text-center mb-8 bg-[#E10600]/10">
+{% if is_quali_locked and is_race_locked %}
+<!-- All predictions locked -->
+<div class="glass border border-[#E10600] rounded-xl p-8 text-center mb-8 bg-[#E10600]/10">
     <svg class="w-12 h-12 text-[#E10600] mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
     <h2 class="text-2xl font-bold text-white mb-2">Predictions Locked</h2>
-    <p class="text-white/80">The session has started, so you can no longer change your predictions.</p>
-    <a href="{% url 'race_detail' race.id|default:1 %}" class="inline-block mt-4 text-[#00D2BE] hover:text-white transition-colors font-semibold">Return to Race Details</a>
+    <p class="text-white/70">The race has started — predictions are now closed.</p>
+    <a href="{% url 'race_detail' race.id %}" class="inline-block mt-4 bg-white/10 hover:bg-white/20 text-white font-semibold py-2 px-6 rounded-lg transition-colors">View Results →</a>
 </div>
 {% else %}
 
-<form method="post" action="{% url 'make_prediction' race.id|default:1 %}" id="prediction-form" class="space-y-8" x-data="predictionApp()">
-    {% csrf_token %}
-    
-    <!-- Hidden inputs to store the selected IDs -->
-    <input type="hidden" name="q_p1" id="input-q-p1" x-model="picks.qualifying[1]">
-    <input type="hidden" name="q_p2" id="input-q-p2" x-model="picks.qualifying[2]">
-    <input type="hidden" name="q_p3" id="input-q-p3" x-model="picks.qualifying[3]">
-    
-    <input type="hidden" name="r_p1" id="input-r-p1" x-model="picks.race[1]">
-    <input type="hidden" name="r_p2" id="input-r-p2" x-model="picks.race[2]">
-    <input type="hidden" name="r_p3" id="input-r-p3" x-model="picks.race[3]">
-    
-    {% if race.is_sprint %}
-    <input type="hidden" name="s_p1" id="input-s-p1" x-model="picks.sprint[1]">
-    <input type="hidden" name="s_p2" id="input-s-p2" x-model="picks.sprint[2]">
-    <input type="hidden" name="s_p3" id="input-s-p3" x-model="picks.sprint[3]">
-    {% endif %}
+<!-- Messages -->
+{% if messages %}
+<div class="mb-6 space-y-2">
+    {% for message in messages %}
+    <div class="glass px-4 py-3 rounded-lg border {% if message.tags == 'success' %}border-green-500/40 bg-green-500/10 text-green-300{% elif message.tags == 'error' %}border-red-500/40 bg-red-500/10 text-red-300{% else %}border-white/20 text-white/80{% endif %}">
+        {{ message }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
 
-    <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        
-        <!-- Left Column: Prediction Slots -->
-        <div class="xl:col-span-2 space-y-8">
-            
-            <!-- Qualifying Predictions -->
-            <div class="glass p-6 rounded-2xl border border-white/10">
-                <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
-                    <span class="bg-[#00D2BE] text-black text-xs px-2 py-1 rounded font-bold">1</span>
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-8" x-data="predictionApp()">
+
+    <!-- Left: Prediction Slots -->
+    <div class="xl:col-span-2 space-y-6">
+
+        <!-- Qualifying Predictions -->
+        <div class="glass p-6 rounded-2xl border {% if is_quali_locked %}border-white/5 opacity-60{% else %}border-white/10{% endif %}">
+            <div class="flex items-center justify-between mb-5">
+                <h3 class="text-xl font-bold flex items-center gap-2">
+                    <span class="bg-[#00D2BE] text-black text-xs px-2 py-1 rounded-md font-bold">Q</span>
                     Qualifying Top 3
                 </h3>
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="slots-qualifying">
-                    {% for pos, label, color in "1 P1 #FFD700,2 P2 #C0C0C0,3 P3 #CD7F32"|split_to_list %}
-                    <div class="bg-black/30 rounded-xl border border-white/5 p-4 min-h-[120px] flex flex-col justify-center items-center text-center relative slot-container" data-session="qualifying" data-pos="{{ pos }}">
-                        <div class="absolute top-2 left-2 text-xs font-bold px-2 py-0.5 rounded bg-black text-[{{ color }}] border border-[{{ color }}]/30">{{ label }}</div>
-                        <div class="text-[#8B8B9A] text-sm mt-4 empty-text">Drag driver here</div>
-                        <!-- Driver card will be dropped here -->
-                    </div>
-                    {% endfor %}
-                </div>
+                {% if is_quali_locked %}
+                <span class="text-xs font-semibold text-[#E10600] flex items-center gap-1">
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path></svg>
+                    Locked
+                </span>
+                {% else %}
+                <span class="text-xs text-[#8B8B9A]">Drag drivers from the right panel</span>
+                {% endif %}
             </div>
 
-            <!-- Race Predictions -->
-            <div class="glass p-6 rounded-2xl border border-white/10">
-                <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
-                    <span class="bg-[#E10600] text-white text-xs px-2 py-1 rounded font-bold">2</span>
+            {% if not is_quali_locked %}
+            <div class="grid grid-cols-3 gap-4">
+                {% for slot_data in quali_slots %}
+                <div class="slot-container rounded-xl border border-white/10 p-3 relative flex flex-col items-center justify-center text-center"
+                     id="slot-qualifying-{{ slot_data.pos }}"
+                     data-session="qualifying"
+                     data-pos="{{ slot_data.pos }}">
+                    <div class="absolute top-2 left-2 text-xs font-bold px-2 py-0.5 rounded border" style="color: {{ slot_data.color }}; border-color: {{ slot_data.color }}44; background: {{ slot_data.color }}11;">{{ slot_data.label }}</div>
+                    <div class="empty-label text-[#8B8B9A] text-xs mt-3">Drop here</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <!-- Show existing quali prediction if locked -->
+            {% if existing_predictions.qualifying %}
+            <div class="grid grid-cols-3 gap-4">
+                <div class="bg-black/30 rounded-xl border border-white/10 p-3 text-center">
+                    <div class="text-xs text-yellow-400 font-bold mb-1">P1</div>
+                    <div class="font-bold text-white text-sm">{{ existing_predictions.qualifying.p1_driver.abbreviation }}</div>
+                    <div class="text-xs text-[#8B8B9A]">{{ existing_predictions.qualifying.p1_driver.last_name }}</div>
+                </div>
+                <div class="bg-black/30 rounded-xl border border-white/10 p-3 text-center">
+                    <div class="text-xs text-gray-400 font-bold mb-1">P2</div>
+                    <div class="font-bold text-white text-sm">{{ existing_predictions.qualifying.p2_driver.abbreviation }}</div>
+                    <div class="text-xs text-[#8B8B9A]">{{ existing_predictions.qualifying.p2_driver.last_name }}</div>
+                </div>
+                <div class="bg-black/30 rounded-xl border border-white/10 p-3 text-center">
+                    <div class="text-xs text-amber-500 font-bold mb-1">P3</div>
+                    <div class="font-bold text-white text-sm">{{ existing_predictions.qualifying.p3_driver.abbreviation }}</div>
+                    <div class="text-xs text-[#8B8B9A]">{{ existing_predictions.qualifying.p3_driver.last_name }}</div>
+                </div>
+            </div>
+            {% else %}
+            <p class="text-[#8B8B9A] text-sm">No qualifying prediction submitted.</p>
+            {% endif %}
+            {% endif %}
+        </div>
+
+        {% if race.has_sprint %}
+        <!-- Sprint Predictions -->
+        <div class="glass p-6 rounded-2xl border {% if is_sprint_locked %}border-white/5 opacity-60{% else %}border-white/10{% endif %}">
+            <div class="flex items-center justify-between mb-5">
+                <h3 class="text-xl font-bold flex items-center gap-2">
+                    <span class="bg-purple-500 text-white text-xs px-2 py-1 rounded-md font-bold">S</span>
+                    Sprint Top 3
+                    <span class="ml-1 bg-[#00D2BE] text-black text-xs px-1.5 py-0.5 rounded font-bold">SPRINT</span>
+                </h3>
+                {% if is_sprint_locked %}<span class="text-xs font-semibold text-[#E10600]">🔒 Locked</span>{% endif %}
+            </div>
+            {% if not is_sprint_locked %}
+            <div class="grid grid-cols-3 gap-4">
+                {% for slot_data in sprint_slots %}
+                <div class="slot-container rounded-xl border border-white/10 p-3 relative flex flex-col items-center justify-center text-center"
+                     id="slot-sprint-{{ slot_data.pos }}"
+                     data-session="sprint"
+                     data-pos="{{ slot_data.pos }}">
+                    <div class="absolute top-2 left-2 text-xs font-bold px-2 py-0.5 rounded border" style="color: {{ slot_data.color }}; border-color: {{ slot_data.color }}44; background: {{ slot_data.color }}11;">{{ slot_data.label }}</div>
+                    <div class="empty-label text-[#8B8B9A] text-xs mt-3">Drop here</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% elif existing_predictions.sprint %}
+            <div class="grid grid-cols-3 gap-4">
+                <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xs text-yellow-400 font-bold mb-1">P1</div><div class="font-bold text-sm">{{ existing_predictions.sprint.p1_driver.abbreviation }}</div></div>
+                <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xs text-gray-400 font-bold mb-1">P2</div><div class="font-bold text-sm">{{ existing_predictions.sprint.p2_driver.abbreviation }}</div></div>
+                <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xs text-amber-500 font-bold mb-1">P3</div><div class="font-bold text-sm">{{ existing_predictions.sprint.p3_driver.abbreviation }}</div></div>
+            </div>
+            {% else %}<p class="text-[#8B8B9A] text-sm">No sprint prediction submitted.</p>{% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Race Predictions -->
+        <div class="glass p-6 rounded-2xl border {% if is_race_locked %}border-white/5 opacity-60{% else %}border-white/10{% endif %}">
+            <div class="flex items-center justify-between mb-5">
+                <h3 class="text-xl font-bold flex items-center gap-2">
+                    <span class="bg-[#E10600] text-white text-xs px-2 py-1 rounded-md font-bold">R</span>
                     Race Top 3
                 </h3>
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="slots-race">
-                    {% for pos, label, color in "1 P1 #FFD700,2 P2 #C0C0C0,3 P3 #CD7F32"|split_to_list %}
-                    <div class="bg-black/30 rounded-xl border border-white/5 p-4 min-h-[120px] flex flex-col justify-center items-center text-center relative slot-container" data-session="race" data-pos="{{ pos }}">
-                        <div class="absolute top-2 left-2 text-xs font-bold px-2 py-0.5 rounded bg-black text-[{{ color }}] border border-[{{ color }}]/30">{{ label }}</div>
-                        <div class="text-[#8B8B9A] text-sm mt-4 empty-text">Drag driver here</div>
-                    </div>
-                    {% endfor %}
+                {% if is_race_locked %}<span class="text-xs font-semibold text-[#E10600]">🔒 Locked</span>{% endif %}
+            </div>
+            {% if not is_race_locked %}
+            <div class="grid grid-cols-3 gap-4">
+                {% for slot_data in race_slots %}
+                <div class="slot-container rounded-xl border border-white/10 p-3 relative flex flex-col items-center justify-center text-center"
+                     id="slot-race-{{ slot_data.pos }}"
+                     data-session="race"
+                     data-pos="{{ slot_data.pos }}">
+                    <div class="absolute top-2 left-2 text-xs font-bold px-2 py-0.5 rounded border" style="color: {{ slot_data.color }}; border-color: {{ slot_data.color }}44; background: {{ slot_data.color }}11;">{{ slot_data.label }}</div>
+                    <div class="empty-label text-[#8B8B9A] text-xs mt-3">Drop here</div>
                 </div>
+                {% endfor %}
             </div>
-            
-            <div class="flex justify-end pt-4">
-                <button type="submit" class="bg-[#E10600] hover:bg-red-700 text-white font-bold py-3 px-8 rounded-xl transition-colors shadow-lg shadow-red-500/20 text-lg w-full md:w-auto" :disabled="!isComplete()" :class="{'opacity-50 cursor-not-allowed': !isComplete()}">
-                    Save Predictions
-                </button>
+            {% elif existing_predictions.race %}
+            <div class="grid grid-cols-3 gap-4">
+                <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xs text-yellow-400 font-bold mb-1">P1</div><div class="font-bold text-sm">{{ existing_predictions.race.p1_driver.abbreviation }}</div><div class="text-xs text-[#8B8B9A]">{{ existing_predictions.race.p1_driver.last_name }}</div></div>
+                <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xs text-gray-400 font-bold mb-1">P2</div><div class="font-bold text-sm">{{ existing_predictions.race.p2_driver.abbreviation }}</div><div class="text-xs text-[#8B8B9A]">{{ existing_predictions.race.p2_driver.last_name }}</div></div>
+                <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xs text-amber-500 font-bold mb-1">P3</div><div class="font-bold text-sm">{{ existing_predictions.race.p3_driver.abbreviation }}</div><div class="text-xs text-[#8B8B9A]">{{ existing_predictions.race.p3_driver.last_name }}</div></div>
             </div>
+            {% else %}<p class="text-[#8B8B9A] text-sm">No race prediction submitted yet — drag drivers above.</p>{% endif %}
         </div>
-        
-        <!-- Right Column: Available Drivers (Draggable) -->
-        <div class="glass p-6 rounded-2xl border border-white/10 h-[800px] flex flex-col">
-            <h3 class="text-xl font-bold mb-4">Available Drivers</h3>
-            <p class="text-sm text-[#8B8B9A] mb-4">Drag drivers from here to the prediction slots on the left. You can reuse the same driver for Qualifying and Race.</p>
-            
-            <div class="flex-grow overflow-y-auto pr-2 custom-scrollbar" id="available-drivers">
-                <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-2 gap-3 pb-4">
-                    {% for driver in drivers %}
-                    <div class="bg-black/40 border border-white/10 rounded-lg p-3 cursor-grab hover:bg-white/10 transition-colors driver-card select-none" data-id="{{ driver.id }}" data-clone="true">
-                        <div class="flex items-center gap-2 mb-1">
-                            <div class="w-2 h-2 rounded-full" style="background-color: {{ driver.team_color|default:'#fff' }}"></div>
-                            <span class="font-mono text-xs text-[#00D2BE]">{{ driver.number }}</span>
-                        </div>
-                        <div class="font-bold text-sm text-white truncate">{{ driver.last_name }}</div>
-                        <div class="text-xs text-[#8B8B9A] truncate">{{ driver.team|slice:":12" }}</div>
+
+        <!-- Submit buttons (one form per unlocked session) -->
+        <div class="space-y-3" id="submit-buttons">
+            {% if not is_quali_locked %}
+            <form method="post" action="{% url 'make_prediction' race.id %}" id="form-qualifying">
+                {% csrf_token %}
+                <input type="hidden" name="session_type" value="qualifying">
+                <input type="hidden" name="p1_driver" id="q-p1-input">
+                <input type="hidden" name="p2_driver" id="q-p2-input">
+                <input type="hidden" name="p3_driver" id="q-p3-input">
+                <button type="submit" id="btn-qualifying"
+                    class="w-full bg-[#00D2BE] hover:bg-teal-400 text-black font-bold py-3 px-6 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    disabled>
+                    Submit Qualifying Prediction
+                </button>
+            </form>
+            {% endif %}
+
+            {% if race.has_sprint and not is_sprint_locked %}
+            <form method="post" action="{% url 'make_prediction' race.id %}" id="form-sprint">
+                {% csrf_token %}
+                <input type="hidden" name="session_type" value="sprint">
+                <input type="hidden" name="p1_driver" id="s-p1-input">
+                <input type="hidden" name="p2_driver" id="s-p2-input">
+                <input type="hidden" name="p3_driver" id="s-p3-input">
+                <button type="submit" id="btn-sprint"
+                    class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 px-6 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    disabled>
+                    Submit Sprint Prediction
+                </button>
+            </form>
+            {% endif %}
+
+            {% if not is_race_locked %}
+            <form method="post" action="{% url 'make_prediction' race.id %}" id="form-race">
+                {% csrf_token %}
+                <input type="hidden" name="session_type" value="race">
+                <input type="hidden" name="p1_driver" id="r-p1-input">
+                <input type="hidden" name="p2_driver" id="r-p2-input">
+                <input type="hidden" name="p3_driver" id="r-p3-input">
+                <button type="submit" id="btn-race"
+                    class="w-full bg-[#E10600] hover:bg-red-500 text-white font-bold py-3 px-6 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    disabled>
+                    Submit Race Prediction
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Right: Available Drivers -->
+    <div class="glass p-6 rounded-2xl border border-white/10 flex flex-col" style="max-height: 85vh; min-height: 500px;">
+        <h3 class="text-lg font-bold mb-1">Drivers</h3>
+        <p class="text-xs text-[#8B8B9A] mb-4">Drag to slots on the left. Each driver can be used for both Qualifying and Race.</p>
+        <div class="flex-grow overflow-y-auto custom-scrollbar pr-1">
+            <div class="grid grid-cols-2 gap-2 pb-2" id="available-drivers-grid">
+                {% for d in drivers %}
+                <div class="driver-chip bg-black/40 border border-white/10 rounded-lg p-3 hover:border-white/30 hover:bg-white/5 transition-all"
+                     data-driver-id="{{ d.driver.id }}"
+                     data-abbreviation="{{ d.driver.abbreviation }}"
+                     data-last-name="{{ d.driver.last_name }}"
+                     data-team="{{ d.team_name }}"
+                     data-color="{{ d.color }}">
+                    <div class="flex items-center gap-1.5 mb-1.5">
+                        <div class="w-2 h-2 rounded-full flex-shrink-0" style="background-color: {{ d.color }}"></div>
+                        <span class="font-mono text-xs font-bold" style="color: {{ d.color }}">{{ d.driver.abbreviation }}</span>
                     </div>
-                    {% empty %}
-                    <!-- Dummy drivers for preview -->
-                    {% for i in "12345678901234567890"|make_list %}
-                    <div class="bg-black/40 border border-white/10 rounded-lg p-3 cursor-grab hover:bg-white/10 transition-colors driver-card select-none" data-id="{{ forloop.counter }}" data-clone="true">
-                        <div class="font-bold text-sm text-white truncate">Driver {{ forloop.counter }}</div>
-                    </div>
-                    {% endfor %}
-                    {% endfor %}
+                    <div class="font-bold text-sm text-white leading-tight">{{ d.driver.last_name }}</div>
+                    <div class="text-xs text-[#8B8B9A] truncate">{{ d.team_name }}</div>
                 </div>
+                {% empty %}
+                <div class="col-span-2 text-center text-[#8B8B9A] py-8">No drivers found for this season.</div>
+                {% endfor %}
             </div>
         </div>
     </div>
-</form>
+</div>
 
-{% block extra_css %}
-<style>
-    .sortable-ghost { opacity: 0.4; }
-    .sortable-drag { cursor: grabbing !important; }
-    .driver-card { touch-action: none; } /* Better touch handling on mobile */
-    .slot-has-item .empty-text { display: none; }
-    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 10px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
-</style>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    // Custom split filter polyfill for the template preview
-    document.addEventListener('alpine:init', () => {
-        Alpine.data('predictionApp', () => ({
-            picks: {
-                qualifying: { 1: '', 2: '', 3: '' },
-                race: { 1: '', 2: '', 3: '' },
-                sprint: { 1: '', 2: '', 3: '' }
-            },
-            
-            init() {
-                this.initSortable();
-                // If editing, populate logic would go here
-            },
-            
-            isComplete() {
-                return this.picks.qualifying[1] && this.picks.qualifying[2] && this.picks.qualifying[3] &&
-                       this.picks.race[1] && this.picks.race[2] && this.picks.race[3];
-            },
-            
-            initSortable() {
-                const self = this;
-                
-                // Available drivers source
-                new Sortable(document.getElementById('available-drivers').firstElementChild, {
-                    group: { name: 'shared', pull: 'clone', put: false },
-                    sort: false,
-                    animation: 150,
-                    onStart: function (evt) { document.body.style.cursor = 'grabbing'; },
-                    onEnd: function (evt) { document.body.style.cursor = 'default'; }
-                });
+document.addEventListener('DOMContentLoaded', function() {
+    // Track slot state: session -> pos -> driverId
+    const slotState = {
+        qualifying: { 1: null, 2: null, 3: null },
+        sprint: { 1: null, 2: null, 3: null },
+        race: { 1: null, 2: null, 3: null },
+    };
 
-                // Initialize drop zones
-                document.querySelectorAll('.slot-container').forEach(slot => {
-                    new Sortable(slot, {
-                        group: { name: 'shared', put: true },
-                        animation: 150,
-                        onAdd: function (evt) {
-                            const el = evt.item;
-                            const driverId = el.dataset.id;
-                            const session = slot.dataset.session;
-                            const pos = slot.dataset.pos;
-                            
-                            // Remove empty text
-                            slot.classList.add('slot-has-item');
-                            
-                            // Remove any existing card in this slot (keep only the new one)
-                            Array.from(slot.children).forEach(child => {
-                                if (child.classList.contains('driver-card') && child !== el) {
-                                    child.remove();
-                                }
-                            });
-                            
-                            // Add remove button to the dropped card
-                            if (!el.querySelector('.remove-btn')) {
-                                el.classList.add('w-full', 'h-full', 'absolute', 'inset-0', 'm-0', 'border-none', 'bg-black/60', 'flex', 'flex-col', 'justify-center');
-                                const removeBtn = document.createElement('button');
-                                removeBtn.className = 'remove-btn absolute top-1 right-1 text-white/50 hover:text-red-500 bg-black/50 rounded-full p-1';
-                                removeBtn.innerHTML = '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
-                                removeBtn.onclick = function(e) {
-                                    e.preventDefault();
-                                    el.remove();
-                                    slot.classList.remove('slot-has-item');
-                                    self.picks[session][pos] = '';
-                                };
-                                el.appendChild(removeBtn);
-                            }
-                            
-                            // Update Alpine state
-                            self.picks[session][pos] = driverId;
-                        }
-                    });
-                });
+    const slots = document.querySelectorAll('.slot-container');
+    const driverGrid = document.getElementById('available-drivers-grid');
+
+    if (!driverGrid || slots.length === 0) return;
+
+    // Helper: update hidden form inputs and button state
+    function updateFormState(session) {
+        const p1 = slotState[session][1];
+        const p2 = slotState[session][2];
+        const p3 = slotState[session][3];
+
+        const prefixMap = { qualifying: 'q', sprint: 's', race: 'r' };
+        const prefix = prefixMap[session];
+
+        const p1Input = document.getElementById(prefix + '-p1-input');
+        const p2Input = document.getElementById(prefix + '-p2-input');
+        const p3Input = document.getElementById(prefix + '-p3-input');
+        const btn = document.getElementById('btn-' + session);
+
+        if (p1Input) p1Input.value = p1 || '';
+        if (p2Input) p2Input.value = p2 || '';
+        if (p3Input) p3Input.value = p3 || '';
+        if (btn) btn.disabled = !(p1 && p2 && p3);
+    }
+
+    // Helper: render a driver chip inside a slot
+    function renderDriverInSlot(slot, driverEl) {
+        const session = slot.dataset.session;
+        const pos = parseInt(slot.dataset.pos);
+        const driverId = driverEl.dataset.driverId;
+        const abbr = driverEl.dataset.abbreviation;
+        const lastName = driverEl.dataset.lastName;
+        const color = driverEl.dataset.color;
+        const team = driverEl.dataset.team;
+
+        // Clear existing driver (keep empty label)
+        slot.querySelectorAll('.slot-driver').forEach(e => e.remove());
+        slot.querySelector('.empty-label').style.display = 'none';
+        slot.classList.add('has-driver');
+
+        const chip = document.createElement('div');
+        chip.className = 'slot-driver w-full pt-6 text-center';
+        chip.innerHTML = `
+            <div class="font-mono text-xs font-bold mb-0.5" style="color:${color}">${abbr}</div>
+            <div class="font-bold text-white text-sm">${lastName}</div>
+            <div class="text-xs text-[#8B8B9A]">${team.substring(0,12)}</div>
+            <button type="button" class="remove-btn mt-2 text-xs text-white/40 hover:text-red-400 transition-colors">✕ Remove</button>
+        `;
+
+        chip.querySelector('.remove-btn').addEventListener('click', function(e) {
+            e.preventDefault();
+            slotState[session][pos] = null;
+            chip.remove();
+            slot.querySelector('.empty-label').style.display = '';
+            slot.classList.remove('has-driver');
+            updateFormState(session);
+        });
+
+        slot.appendChild(chip);
+        slotState[session][pos] = driverId;
+        updateFormState(session);
+    }
+
+    // Initialize SortableJS on driver grid
+    if (typeof Sortable !== 'undefined') {
+        Sortable.create(driverGrid, {
+            group: { name: 'drivers', pull: 'clone', put: false },
+            sort: false,
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            dragClass: 'sortable-drag',
+            onEnd: function(evt) {
+                // If dropped back to source or outside, remove the clone
+                if (evt.to === driverGrid) {
+                    evt.item.remove();
+                }
             }
-        }));
+        });
+
+        // Initialize each slot as a drop zone
+        slots.forEach(function(slot) {
+            const session = slot.dataset.session;
+            const pos = parseInt(slot.dataset.pos);
+
+            Sortable.create(slot, {
+                group: { name: 'drivers', pull: false, put: true },
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                onAdd: function(evt) {
+                    const droppedEl = evt.item;
+                    // SortableJS moves the element into the slot; we want to remove it and render our own UI
+                    droppedEl.remove();
+                    renderDriverInSlot(slot, droppedEl);
+                }
+            });
+        });
+    }
+
+    // Mobile/fallback: tap driver then tap slot
+    let selectedDriver = null;
+
+    document.querySelectorAll('.driver-chip').forEach(function(chip) {
+        chip.addEventListener('click', function() {
+            document.querySelectorAll('.driver-chip').forEach(c => c.classList.remove('ring-2', 'ring-[#E10600]'));
+            selectedDriver = chip;
+            chip.classList.add('ring-2', 'ring-[#E10600]');
+        });
     });
+
+    slots.forEach(function(slot) {
+        slot.addEventListener('click', function() {
+            if (selectedDriver) {
+                renderDriverInSlot(slot, selectedDriver);
+                selectedDriver.classList.remove('ring-2', 'ring-[#E10600]');
+                selectedDriver = null;
+            }
+        });
+    });
+});
 </script>
-{% endblock %}
-{% endif %}
 {% endblock %}

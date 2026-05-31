@@ -117,6 +117,13 @@ def make_prediction(request, race_id):
             messages.error(request, 'Invalid driver selection.')
             return redirect('make_prediction', race_id=race.id)
 
+    # Slot metadata for the template (position label + color)
+    slot_meta = [
+        {'pos': 1, 'label': 'P1', 'color': '#FFD700'},
+        {'pos': 2, 'label': 'P2', 'color': '#C0C0C0'},
+        {'pos': 3, 'label': 'P3', 'color': '#CD7F32'},
+    ]
+
     context = {
         'race': race,
         'drivers': driver_list,
@@ -124,6 +131,9 @@ def make_prediction(request, race_id):
         'is_quali_locked': is_quali_locked,
         'is_sprint_locked': is_sprint_locked,
         'is_race_locked': is_race_locked,
+        'quali_slots': slot_meta,
+        'sprint_slots': slot_meta,
+        'race_slots': slot_meta,
     }
     return render(request, 'predictions/make.html', context)
 
