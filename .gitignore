@@ -25,7 +25,7 @@ fastf1_cache/
 
 # Static files (compiled)
 staticfiles/
-static/css/output.css
+# static/css/output.css  # Committed to git for deployment
 
 # Media uploads
 media/

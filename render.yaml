@@ -10,14 +10,13 @@ services:
     name: f1predictor
     env: python
     plan: free
+    # Build: install deps and collect static assets only (CSS is pre-compiled and committed)
+    # Database operations moved to startCommand (start.sh) so DATABASE_URL is available
     buildCommand: |
       pip install -r requirements.txt &&
-      python manage.py tailwind build &&
-      python manage.py collectstatic --noinput &&
-      python manage.py migrate &&
-      python manage.py seed_2026 &&
-      python manage.py sync_f1_data --full
-    startCommand: gunicorn f1predictor.wsgi
+      python manage.py collectstatic --noinput
+    # Start: runs migrations + seeding + gunicorn with full DB access
+    startCommand: bash start.sh
     envVars:
       - key: DATABASE_URL
         fromDatabase:
