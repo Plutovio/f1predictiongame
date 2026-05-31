@@ -99,6 +99,7 @@ STORAGES = {
         'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
     },
 }
+WHITENOISE_MANIFEST_STRICT = False
 
 # Tailwind CSS configuration
 TAILWIND_CLI_SRC_CSS = "static/css/input.css"
