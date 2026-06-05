@@ -17,10 +17,18 @@
                     <span class="font-mono font-bold {% if result.position == 1 %}text-[#FFD700]{% elif result.position == 2 %}text-[#C0C0C0]{% elif result.position == 3 %}text-[#CD7F32]{% else %}text-white/80{% endif %}">{{ result.position }}</span>
                 </td>
                 <td class="py-3 px-4 font-bold text-white">
-                    {{ result.driver.first_name }} {{ result.driver.last_name }}
+                    <a href="{% url 'driver_detail' result.driver.id %}" class="hover:text-[#00D2BE] transition-colors">
+                        {{ result.driver.first_name }} {{ result.driver.last_name }}
+                    </a>
                 </td>
                 <td class="py-3 px-4 font-medium" style="color: {{ result.team.color_primary|default:'#F1F1F1' }};">
-                    {{ result.team.name }}
+                    {% if result.team %}
+                    <a href="{% url 'team_detail' result.team.id %}" class="hover:underline">
+                        {{ result.team.name }}
+                    </a>
+                    {% else %}
+                    —
+                    {% endif %}
                 </td>
                 <td class="py-3 px-4 text-center font-mono text-white/60">
                     {{ result.grid_position|default:"—" }}

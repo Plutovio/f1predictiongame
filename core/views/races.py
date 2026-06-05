@@ -28,6 +28,22 @@ def race_detail(request, race_id):
     race = get_object_or_404(Race, id=race_id)
 
     # Get results for each session
+    fp1_results = SessionResult.objects.filter(
+        race=race, session_type='fp1'
+    ).order_by('position').select_related('driver')
+
+    fp2_results = SessionResult.objects.filter(
+        race=race, session_type='fp2'
+    ).order_by('position').select_related('driver')
+
+    fp3_results = SessionResult.objects.filter(
+        race=race, session_type='fp3'
+    ).order_by('position').select_related('driver')
+
+    sprint_qualifying_results = SessionResult.objects.filter(
+        race=race, session_type='sprint_qualifying'
+    ).order_by('position').select_related('driver') if race.has_sprint else []
+
     qualifying_results = SessionResult.objects.filter(
         race=race, session_type='qualifying'
     ).order_by('position').select_related('driver')
@@ -40,15 +56,7 @@ def race_detail(request, race_id):
         race=race, session_type='race'
     ).order_by('position').select_related('driver')
 
-    # Get weather data (cached or from FastF1)
-    weather = None
-    if race.is_completed:
-        try:
-            from core.services.fastf1_sync import FastF1SyncService
-            service = FastF1SyncService(race.season)
-            weather = service.get_session_weather(race, 'race')
-        except Exception:
-            pass
+
 
     # Check user predictions for this race
     user_prediction = None
@@ -68,10 +76,13 @@ def race_detail(request, race_id):
 
     context = {
         'race': race,
+        'fp1_results': fp1_results,
+        'fp2_results': fp2_results,
+        'fp3_results': fp3_results,
+        'sprint_qualifying_results': sprint_qualifying_results,
         'qualifying_results': qualifying_results,
         'sprint_results': sprint_results,
         'race_results': race_results,
-        'weather': weather,
         'user_prediction': user_prediction,
         'user_scores': user_scores,
         'active_tab': active_tab,
@@ -83,7 +94,35 @@ def race_tab_partial(request, race_id, tab):
     """HTMX partial for race detail tabs."""
     race = get_object_or_404(Race, id=race_id)
 
-    if tab == 'qualifying':
+    if tab == 'fp1':
+        results = SessionResult.objects.filter(
+            race=race, session_type='fp1'
+        ).order_by('position').select_related('driver')
+        return render(request, 'partials/race_tab_practice.html', {
+            'race': race, 'results': results, 'session_name': 'Free Practice 1'
+        })
+    elif tab == 'fp2':
+        results = SessionResult.objects.filter(
+            race=race, session_type='fp2'
+        ).order_by('position').select_related('driver')
+        return render(request, 'partials/race_tab_practice.html', {
+            'race': race, 'results': results, 'session_name': 'Free Practice 2'
+        })
+    elif tab == 'fp3':
+        results = SessionResult.objects.filter(
+            race=race, session_type='fp3'
+        ).order_by('position').select_related('driver')
+        return render(request, 'partials/race_tab_practice.html', {
+            'race': race, 'results': results, 'session_name': 'Free Practice 3'
+        })
+    elif tab == 'sprint_qualifying':
+        results = SessionResult.objects.filter(
+            race=race, session_type='sprint_qualifying'
+        ).order_by('position').select_related('driver')
+        return render(request, 'partials/race_tab_qualifying.html', {
+            'race': race, 'results': results, 'session_name': 'Sprint Shootout'
+        })
+    elif tab == 'qualifying':
         results = SessionResult.objects.filter(
             race=race, session_type='qualifying'
         ).order_by('position').select_related('driver')
@@ -104,16 +143,6 @@ def race_tab_partial(request, race_id, tab):
         return render(request, 'partials/race_tab_race.html', {
             'race': race, 'results': results
         })
-    elif tab == 'weather':
-        weather = None
-        try:
-            from core.services.fastf1_sync import FastF1SyncService
-            service = FastF1SyncService(race.season)
-            weather = service.get_session_weather(race, 'race')
-        except Exception:
-            pass
-        return render(request, 'partials/race_tab_weather.html', {
-            'race': race, 'weather': weather
-        })
+
 
     return render(request, 'partials/race_tab_race.html', {'race': race, 'results': []})

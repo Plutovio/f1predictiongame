@@ -1,6 +1,8 @@
-<div class="glass p-6 rounded-2xl flex flex-col sm:flex-row items-center gap-6 group hover:border-white/20 transition-colors">
+<div class="glass holo-card p-6 rounded-2xl flex flex-col sm:flex-row items-center gap-6 group"
+     style="--card-glow-color: {{ driver.current_team.color_primary|default:'#ffffff' }}; border-left: 4px solid {{ driver.current_team.color_primary|default:'#ffffff' }};">
     <div class="relative w-16 h-16 flex-shrink-0">
-        <div class="absolute inset-0 bg-[#E10600] rounded-full opacity-20 group-hover:scale-110 transition-transform blur-md"></div>
+        <div class="absolute inset-0 rounded-full opacity-20 group-hover:scale-110 transition-transform blur-md"
+             style="background-color: {{ driver.current_team.color_primary|default:'#ffffff' }};"></div>
         <div class="relative w-full h-full rounded-full border border-white/20 flex items-center justify-center bg-[#15151E] overflow-hidden">
             {% if driver.image_url %}
             <img src="{{ driver.image_url }}" alt="{{ driver.last_name }}" class="w-full h-full object-cover">

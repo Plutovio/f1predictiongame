@@ -4,6 +4,8 @@ pages = [
     '/',
     '/standings/drivers/',
     '/standings/constructors/',
+    '/drivers/1/',
+    '/teams/1/',
     '/races/',
     '/analytics/',
     '/auth/login/',

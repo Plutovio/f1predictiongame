@@ -27,10 +27,33 @@
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
+    {% if theme_team %}
+        {% with active_theme_team=theme_team %}
+            {% include 'partials/_dynamic_theme.html' with section='style' %}
+        {% endwith %}
+    {% elif user_profile %}
+        {% if user_profile.favorite_team %}
+            {% with active_theme_team=user_profile.favorite_team %}
+                {% include 'partials/_dynamic_theme.html' with section='style' %}
+            {% endwith %}
+        {% endif %}
+    {% endif %}
     {% block extra_css %}{% endblock %}
 </head>
 <body class="bg-[#15151E] text-[#F1F1F1] min-h-screen flex flex-col antialiased selection:bg-[#E10600] selection:text-white"
       hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+    
+    {% if theme_team %}
+        {% with active_theme_team=theme_team %}
+            {% include 'partials/_dynamic_theme.html' with section='glow' %}
+        {% endwith %}
+    {% elif user_profile %}
+        {% if user_profile.favorite_team %}
+            {% with active_theme_team=user_profile.favorite_team %}
+                {% include 'partials/_dynamic_theme.html' with section='glow' %}
+            {% endwith %}
+        {% endif %}
+    {% endif %}
     
     {% include 'components/navbar.html' %}
     

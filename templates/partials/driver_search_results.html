@@ -5,19 +5,33 @@
     </td>
     <td class="py-4 px-6">
         <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full flex items-center justify-center bg-black/30 overflow-hidden hidden sm:flex" {% if entry.team %}style="border: 2px solid {{ entry.team.color_primary }}"{% else %}style="border: 2px solid rgba(255,255,255,0.2)"{% endif %}>
-                <span class="text-xs font-bold">{{ entry.driver.abbreviation }}</span>
-            </div>
+            <a href="{% url 'driver_detail' entry.driver.id %}" class="w-10 h-10 rounded-full flex items-center justify-center bg-black/30 overflow-hidden hidden sm:flex hover:scale-105 transition-transform" {% if entry.team %}style="border: 2px solid {{ entry.team.color_primary }}"{% else %}style="border: 2px solid rgba(255,255,255,0.2)"{% endif %}>
+                <span class="text-xs font-bold text-white">{{ entry.driver.abbreviation }}</span>
+            </a>
             <div>
                 <div class="font-bold text-white text-base md:text-lg flex items-center gap-2">
-                    <span class="hidden md:inline text-white/60 font-normal">{{ entry.driver.first_name }}</span>
-                    <span>{{ entry.driver.last_name }}</span>
+                    <a href="{% url 'driver_detail' entry.driver.id %}" class="hover:text-[#00D2BE] transition-colors">
+                        <span class="hidden md:inline text-white/60 font-normal">{{ entry.driver.first_name }}</span>
+                        <span>{{ entry.driver.last_name }}</span>
+                    </a>
                 </div>
-                <div class="text-xs text-[#8B8B9A] sm:hidden">{{ entry.team.short_name|default:"—" }}</div>
+                <div class="text-xs text-[#8B8B9A] sm:hidden">
+                    {% if entry.team %}
+                    <a href="{% url 'team_detail' entry.team.id %}" class="hover:underline">{{ entry.team.short_name }}</a>
+                    {% else %}
+                    —
+                    {% endif %}
+                </div>
             </div>
         </div>
     </td>
-    <td class="py-4 px-6 hidden sm:table-cell font-medium" {% if entry.team %}style="color: {{ entry.team.color_primary }}"{% endif %}>{{ entry.team.short_name|default:"—" }}</td>
+    <td class="py-4 px-6 hidden sm:table-cell font-medium" {% if entry.team %}style="color: {{ entry.team.color_primary }}"{% endif %}>
+        {% if entry.team %}
+        <a href="{% url 'team_detail' entry.team.id %}" class="hover:underline">{{ entry.team.short_name }}</a>
+        {% else %}
+        —
+        {% endif %}
+    </td>
     <td class="py-4 px-6 text-center font-mono text-white/80">{{ entry.wins|default:"0" }}</td>
     <td class="py-4 px-6 text-center font-mono text-white/80">{{ entry.podiums|default:"0" }}</td>
     <td class="py-4 px-6 text-right font-mono text-xl font-bold text-white">{{ entry.points|floatformat:0 }}</td>

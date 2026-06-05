@@ -137,14 +137,27 @@
             <button @click="tab = 'schedule'" :class="{ 'bg-white/10 text-white border-[#E10600]': tab === 'schedule', 'text-[#8B8B9A] hover:text-white hover:bg-white/5 border-transparent': tab !== 'schedule' }" class="px-5 py-2.5 rounded-t-lg font-semibold whitespace-nowrap border-b-2 transition-colors">
                 Schedule
             </button>
+            <button @click="tab = 'fp1'" :class="{ 'bg-white/10 text-white border-[#E10600]': tab === 'fp1', 'text-[#8B8B9A] hover:text-white hover:bg-white/5 border-transparent': tab !== 'fp1' }" class="px-5 py-2.5 rounded-t-lg font-semibold whitespace-nowrap border-b-2 transition-colors">
+                FP1
+            </button>
+            {% if race.has_sprint %}
+                <button @click="tab = 'sprint_qualifying'" :class="{ 'bg-white/10 text-white border-[#E10600]': tab === 'sprint_qualifying', 'text-[#8B8B9A] hover:text-white hover:bg-white/5 border-transparent': tab !== 'sprint_qualifying' }" class="px-5 py-2.5 rounded-t-lg font-semibold whitespace-nowrap border-b-2 transition-colors">
+                    Sprint Quali
+                </button>
+                <button @click="tab = 'sprint'" :class="{ 'bg-white/10 text-white border-[#E10600]': tab === 'sprint', 'text-[#8B8B9A] hover:text-white hover:bg-white/5 border-transparent': tab !== 'sprint' }" class="px-5 py-2.5 rounded-t-lg font-semibold whitespace-nowrap border-b-2 transition-colors">
+                    Sprint
+                </button>
+            {% else %}
+                <button @click="tab = 'fp2'" :class="{ 'bg-white/10 text-white border-[#E10600]': tab === 'fp2', 'text-[#8B8B9A] hover:text-white hover:bg-white/5 border-transparent': tab !== 'fp2' }" class="px-5 py-2.5 rounded-t-lg font-semibold whitespace-nowrap border-b-2 transition-colors">
+                    FP2
+                </button>
+                <button @click="tab = 'fp3'" :class="{ 'bg-white/10 text-white border-[#E10600]': tab === 'fp3', 'text-[#8B8B9A] hover:text-white hover:bg-white/5 border-transparent': tab !== 'fp3' }" class="px-5 py-2.5 rounded-t-lg font-semibold whitespace-nowrap border-b-2 transition-colors">
+                    FP3
+                </button>
+            {% endif %}
             <button @click="tab = 'qualifying'" :class="{ 'bg-white/10 text-white border-[#E10600]': tab === 'qualifying', 'text-[#8B8B9A] hover:text-white hover:bg-white/5 border-transparent': tab !== 'qualifying' }" class="px-5 py-2.5 rounded-t-lg font-semibold whitespace-nowrap border-b-2 transition-colors">
                 Qualifying
             </button>
-            {% if race.has_sprint %}
-            <button @click="tab = 'sprint'" :class="{ 'bg-white/10 text-white border-[#E10600]': tab === 'sprint', 'text-[#8B8B9A] hover:text-white hover:bg-white/5 border-transparent': tab !== 'sprint' }" class="px-5 py-2.5 rounded-t-lg font-semibold whitespace-nowrap border-b-2 transition-colors">
-                Sprint
-            </button>
-            {% endif %}
             <button @click="tab = 'race'" :class="{ 'bg-white/10 text-white border-[#E10600]': tab === 'race', 'text-[#8B8B9A] hover:text-white hover:bg-white/5 border-transparent': tab !== 'race' }" class="px-5 py-2.5 rounded-t-lg font-semibold whitespace-nowrap border-b-2 transition-colors">
                 Race Results
             </button>
@@ -282,28 +295,58 @@
                 {% endif %}
             </div>
             
-            <!-- HTMX-loaded tabs: qualifying, sprint, race. -->
-            <div x-show="tab === 'qualifying'" x-transition.opacity x-cloak>
-                <div hx-get="{% url 'race_tab' race.id 'qualifying' %}" hx-trigger="intersect once" hx-indicator="#q-indicator">
-                    <div id="q-indicator" class="flex justify-center py-12"><svg class="animate-spin h-8 w-8 text-[#E10600]" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg></div>
-                    <!-- Fallback content -->
+            <!-- HTMX-loaded tabs -->
+            
+            <!-- FP1 -->
+            <div x-show="tab === 'fp1'" x-transition.opacity x-cloak>
+                <div hx-get="{% url 'race_tab' race.id 'fp1' %}" hx-trigger="intersect once">
                     <p class="text-center text-[#8B8B9A] py-8">Results not available yet.</p>
                 </div>
             </div>
 
             {% if race.has_sprint %}
-            <div x-show="tab === 'sprint'" x-transition.opacity x-cloak>
-                <div hx-get="{% url 'race_tab' race.id 'sprint' %}" hx-trigger="intersect once">
+                <!-- Sprint Qualifying -->
+                <div x-show="tab === 'sprint_qualifying'" x-transition.opacity x-cloak>
+                    <div hx-get="{% url 'race_tab' race.id 'sprint_qualifying' %}" hx-trigger="intersect once">
+                        <p class="text-center text-[#8B8B9A] py-8">Results not available yet.</p>
+                    </div>
+                </div>
+                <!-- Sprint -->
+                <div x-show="tab === 'sprint'" x-transition.opacity x-cloak>
+                    <div hx-get="{% url 'race_tab' race.id 'sprint' %}" hx-trigger="intersect once">
+                        <p class="text-center text-[#8B8B9A] py-8">Results not available yet.</p>
+                    </div>
+                </div>
+            {% else %}
+                <!-- FP2 -->
+                <div x-show="tab === 'fp2'" x-transition.opacity x-cloak>
+                    <div hx-get="{% url 'race_tab' race.id 'fp2' %}" hx-trigger="intersect once">
+                        <p class="text-center text-[#8B8B9A] py-8">Results not available yet.</p>
+                    </div>
+                </div>
+                <!-- FP3 -->
+                <div x-show="tab === 'fp3'" x-transition.opacity x-cloak>
+                    <div hx-get="{% url 'race_tab' race.id 'fp3' %}" hx-trigger="intersect once">
+                        <p class="text-center text-[#8B8B9A] py-8">Results not available yet.</p>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Qualifying -->
+            <div x-show="tab === 'qualifying'" x-transition.opacity x-cloak>
+                <div hx-get="{% url 'race_tab' race.id 'qualifying' %}" hx-trigger="intersect once" hx-indicator="#q-indicator">
+                    <div id="q-indicator" class="flex justify-center py-12"><svg class="animate-spin h-8 w-8 text-[#E10600]" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg></div>
                     <p class="text-center text-[#8B8B9A] py-8">Results not available yet.</p>
                 </div>
             </div>
-            {% endif %}
 
+            <!-- Race Results -->
             <div x-show="tab === 'race'" x-transition.opacity x-cloak>
                 <div hx-get="{% url 'race_tab' race.id 'race' %}" hx-trigger="intersect once">
                     <p class="text-center text-[#8B8B9A] py-8">Results not available yet.</p>
                 </div>
             </div>
+
         </div>
     </div>
 
@@ -341,48 +384,6 @@
             {% endif %}
         </div>
 
-        <!-- Weather Widget -->
-        <div class="glass p-6 rounded-2xl border border-white/10">
-            <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
-                <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>
-                Weather Forecast
-            </h3>
-            
-            {% if weather %}
-            <div class="flex items-center justify-between mb-4">
-                <div class="text-4xl">{% if weather.rainfall %}🌧️{% else %}☀️{% endif %}</div>
-                <div class="text-right">
-                    <div class="text-3xl font-mono font-bold text-white">{{ weather.air_temp }}°C</div>
-                    <div class="text-[#8B8B9A] text-sm">Track: {{ weather.track_temp }}°C</div>
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
-                <div>
-                    <div class="text-xs text-[#8B8B9A] uppercase tracking-wider mb-1">Humidity</div>
-                    <div class="font-mono text-white font-semibold">{{ weather.humidity }}%</div>
-                </div>
-                <div>
-                    <div class="text-xs text-[#8B8B9A] uppercase tracking-wider mb-1">Wind Speed</div>
-                    <div class="font-mono text-white font-semibold">{{ weather.wind_speed }} km/h</div>
-                </div>
-            </div>
-            {% else %}
-                {% if race.is_completed %}
-                <div class="text-center py-6 text-[#8B8B9A]">
-                    <div class="text-4xl mb-3">🌤️</div>
-                    <p class="text-sm font-semibold text-white mb-1">Weather Data Unavailable</p>
-                    <p class="text-xs">Historical weather data could not be retrieved for this completed race.</p>
-                </div>
-                {% else %}
-                <div class="text-center py-6 text-[#8B8B9A]">
-                    <div class="text-4xl mb-3">🌤️</div>
-                    <p class="text-sm font-semibold text-white mb-1">Forecast Pending</p>
-                    <p class="text-xs">Weather forecasts will be available here once the race weekend starts.</p>
-                </div>
-                {% endif %}
-            {% endif %}
-        </div>
     </div>
 </div>
 

@@ -44,6 +44,61 @@
                 </div>
             </div>
 
+            <!-- F1 Weekend Live Stepper Timeline -->
+            {% if next_race %}
+            <div class="mt-6 mb-8 bg-black/10 rounded-xl p-4 border border-white/5 relative z-10" 
+                 x-data="raceTimeline({
+                    fp1: '{{ next_race.fp1_date|date:'c' }}',
+                    fp2: '{{ next_race.fp2_date|date:'c' }}',
+                    fp3: '{% if next_race.has_sprint %}{{ next_race.sprint_qualifying_date|date:'c' }}{% else %}{{ next_race.fp3_date|date:'c' }}{% endif %}',
+                    fp3_name: '{% if next_race.has_sprint %}Sprint Shootout{% else %}FP3{% endif %}',
+                    quali: '{% if next_race.has_sprint %}{{ next_race.sprint_date|date:'c' }}{% else %}{{ next_race.qualifying_date|date:'c' }}{% endif %}',
+                    quali_name: '{% if next_race.has_sprint %}Sprint Race{% else %}Qualifying{% endif %}',
+                    race: '{{ next_race.race_date|date:'c' }}'
+                 })" x-init="initTimeline()">
+                
+                <h4 class="text-xs font-bold text-[#8B8B9A] uppercase tracking-wider mb-4 text-left">GP Weekend Progress</h4>
+                
+                <div class="relative flex items-center justify-between gap-1 overflow-x-auto custom-scrollbar pb-2 pr-1">
+                    <!-- Progress Connecting Bar -->
+                    <div class="absolute left-4 right-4 h-1 bg-white/10 top-[18px] -translate-y-1/2 z-0 rounded-full">
+                        <div class="h-full bg-[var(--f1-red)] transition-all duration-500 rounded-full"
+                             :style="'width: ' + progressPercent + '%'"></div>
+                    </div>
+                    
+                    <!-- Steps -->
+                    <template x-for="(s, index) in steps" :key="index">
+                        <div class="flex flex-col items-center relative z-10 flex-shrink-0" style="min-width: 70px;">
+                            <!-- Node -->
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 text-xs font-bold shadow-md relative"
+                                 :class="s.status === 'completed' ? 'bg-[var(--f1-red)] border-[var(--f1-red)] text-white' : 
+                                         s.status === 'live' ? 'bg-[#15151E] border-[var(--f1-red)] text-[var(--f1-red)] animate-pulse' :
+                                         'bg-[#1F1F2E] border-white/20 text-[#8B8B9A]'">
+                                
+                                <template x-if="s.status === 'live'">
+                                    <span class="absolute inset-0 rounded-full bg-[var(--f1-red)] opacity-20 animate-ping"></span>
+                                </template>
+                                
+                                <svg x-show="s.status === 'completed'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <div x-show="s.status === 'live'" class="w-2.5 h-2.5 rounded-full bg-[var(--f1-red)]"></div>
+                                <span x-show="s.status === 'upcoming'" x-text="s.short"></span>
+                            </div>
+                            
+                            <!-- Label -->
+                            <div class="text-center mt-2">
+                                <div class="text-[10px] font-bold whitespace-nowrap"
+                                     :class="s.status === 'live' ? 'text-[var(--f1-red)]' : s.status === 'completed' ? 'text-white/90' : 'text-[#8B8B9A]'"
+                                     x-text="s.name"></div>
+                                <div class="text-[8px] text-[#8B8B9A]/80 mt-0.5 whitespace-nowrap" x-text="s.timeFormatted"></div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            {% endif %}
+
             <div class="flex flex-col sm:flex-row gap-4">
                 {% if next_race %}
                 <a href="{% url 'make_prediction' next_race.id %}" class="bg-[#E10600] hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-lg shadow-red-500/20">
@@ -143,6 +198,61 @@
                 this.hours = String(Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))).padStart(2, '0');
                 this.minutes = String(Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60))).padStart(2, '0');
                 this.seconds = String(Math.floor((distance % (1000 * 60)) / 1000)).padStart(2, '0');
+            }
+        }));
+
+        Alpine.data('raceTimeline', (dates) => ({
+            steps: [],
+            progressPercent: 0,
+            initTimeline() {
+                this.update();
+                setInterval(() => this.update(), 10000); // Update every 10s
+            },
+            update() {
+                const now = new Date().getTime();
+                const sessionDates = [
+                    { name: 'FP1', short: 'P1', date: new Date(dates.fp1).getTime() },
+                    { name: 'FP2', short: 'P2', date: new Date(dates.fp2).getTime() },
+                    { name: dates.fp3_name, short: 'P3', date: new Date(dates.fp3).getTime() },
+                    { name: dates.quali_name, short: 'Q', date: new Date(dates.quali).getTime() },
+                    { name: 'Race', short: 'GP', date: new Date(dates.race).getTime() }
+                ];
+                
+                let completedCount = 0;
+                this.steps = sessionDates.map((s, idx) => {
+                    const duration = idx === 4 ? 7200000 : 3600000; // 2h for race, 1h for others
+                    const start = s.date;
+                    const end = start + duration;
+                    let status = 'upcoming';
+                    
+                    if (now >= end) {
+                        status = 'completed';
+                        completedCount++;
+                    } else if (now >= start && now < end) {
+                        status = 'live';
+                    }
+                    
+                    // Format time
+                    const d = new Date(s.date);
+                    const timeFormatted = d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+                    
+                    return {
+                        name: s.name,
+                        short: s.short,
+                        status: status,
+                        timeFormatted: timeFormatted
+                    };
+                });
+                
+                // Calculate line progress percent
+                let liveIdx = this.steps.findIndex(s => s.status === 'live');
+                if (liveIdx !== -1) {
+                    this.progressPercent = (liveIdx / (this.steps.length - 1)) * 100 + (3600000 / (1000 * 60 * 60)) * (now - this.steps[liveIdx].date) / 3600000;
+                } else {
+                    this.progressPercent = completedCount === 0 ? 0 : 
+                                          completedCount === this.steps.length ? 100 : 
+                                          (completedCount / (this.steps.length - 1)) * 100;
+                }
             }
         }));
     });

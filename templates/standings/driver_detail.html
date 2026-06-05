@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ driver.first_name }} {{ driver.last_name }} Profile | F1 Predictor{% endblock %}
+
+{% block content %}
+<!-- Back to Standings Link -->
+<div class="mb-6">
+    <a href="{% url 'driver_standings' %}" class="inline-flex items-center text-sm text-[#8B8B9A] hover:text-[#00D2BE] transition-colors gap-1.5">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Back to Driver Standings
+    </a>
+</div>
+
+<!-- Driver Header Card -->
+<div class="glass rounded-2xl overflow-hidden mb-8 border border-white/10 relative group">
+    <div class="h-3 w-full" style="background-color: {{ team.color_primary|default:'#E10600' }};"></div>
+    <div class="p-6 md:p-8 flex flex-col md:flex-row items-center gap-6 md:gap-8 relative z-10">
+        <!-- Driver Avatar/Headshot -->
+        <div class="relative w-28 h-28 md:w-32 md:h-32 flex-shrink-0">
+            <div class="absolute inset-0 rounded-full opacity-20 blur-md scale-115 transition-transform duration-300 group-hover:scale-125"
+                 style="background-color: {{ team.color_primary|default:'#E10600' }};"></div>
+            <div class="relative w-full h-full rounded-full border-2 flex items-center justify-center bg-black/40 overflow-hidden"
+                 style="border-color: {{ team.color_primary|default:'rgba(255,255,255,0.2)' }};">
+                {% if driver.headshot_url %}
+                <img src="{{ driver.headshot_url }}" alt="{{ driver.last_name }}" class="w-full h-full object-cover">
+                {% else %}
+                <span class="text-3xl font-mono font-bold text-white">{{ driver.abbreviation }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Driver Info -->
+        <div class="flex-grow text-center md:text-left">
+            <div class="flex flex-col md:flex-row md:items-center gap-2 mb-2 justify-center md:justify-start">
+                <h1 class="text-3xl md:text-4xl font-extrabold text-white leading-tight">
+                    {{ driver.first_name }} {{ driver.last_name }}
+                </h1>
+                <span class="inline-flex items-center justify-center font-mono text-sm font-bold bg-[#15151E] px-2.5 py-1 rounded border border-white/10 text-[#00D2BE] mx-auto md:mx-0">
+                    #{{ driver.number|default:"—" }}
+                </span>
+            </div>
+            
+            <div class="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm text-[#8B8B9A] mb-4">
+                {% if driver.country %}
+                <span class="flex items-center gap-1.5">
+                    <span class="text-lg">🏳️</span> {{ driver.country }}
+                </span>
+                <span>&bull;</span>
+                {% endif %}
+                {% if driver.date_of_birth %}
+                <span>Born: {{ driver.date_of_birth|date:"d M Y" }}</span>
+                <span>&bull;</span>
+                {% endif %}
+                <span>Abbreviation: <strong class="text-white">{{ driver.abbreviation }}</strong></span>
+            </div>
+
+            <!-- Team Association -->
+            <div class="inline-flex items-center">
+                {% if team %}
+                <a href="{% url 'team_detail' team.id %}" class="glass hover:bg-white/10 transition-colors px-4 py-1.5 rounded-full text-sm font-semibold flex items-center gap-2 border border-white/15" style="border-left: 4px solid {{ team.color_primary }};">
+                    <span style="color: {{ team.color_primary }};">{{ team.name }}</span>
+                </a>
+                {% else %}
+                <span class="text-[#8B8B9A] text-sm">No Active Team Assignment</span>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Large Glowing Number Backdrop -->
+        <div class="absolute right-6 bottom-4 text-8xl md:text-9xl font-mono font-black select-none pointer-events-none opacity-[0.03] group-hover:opacity-[0.05] transition-opacity duration-300"
+             style="color: {{ team.color_primary|default:'#FFFFFF' }};">
+            {{ driver.number|default:"—" }}
+        </div>
+    </div>
+</div>
+
+<!-- Stats Dashboard Grid -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    <div class="glass p-5 rounded-2xl border border-white/10 flex flex-col justify-between">
+        <span class="text-xs text-[#8B8B9A] uppercase tracking-wider mb-2 font-medium">Championship Rank</span>
+        <div class="text-3xl md:text-4xl font-mono font-bold {% if standing.position == 1 %}text-[#FFD700]{% elif standing.position == 2 %}text-[#C0C0C0]{% elif standing.position == 3 %}text-[#CD7F32]{% else %}text-white{% endif %}">
+            Pos {{ standing.position|default:"—" }}
+        </div>
+    </div>
+    
+    <div class="glass p-5 rounded-2xl border border-white/10 flex flex-col justify-between">
+        <span class="text-xs text-[#8B8B9A] uppercase tracking-wider mb-2 font-medium">Total Points</span>
+        <div class="text-3xl md:text-4xl font-mono font-bold text-[#00D2BE]">
+            {{ standing.points|floatformat:0|default:"0" }}
+        </div>
+    </div>
+    
+    <div class="glass p-5 rounded-2xl border border-white/10 flex flex-col justify-between">
+        <span class="text-xs text-[#8B8B9A] uppercase tracking-wider mb-2 font-medium">Wins / Podiums</span>
+        <div class="text-3xl md:text-4xl font-mono font-bold text-white">
+            {{ standing.wins|default:"0" }} <span class="text-lg text-[#8B8B9A]">/</span> {{ standing.podiums|default:"0" }}
+        </div>
+    </div>
+    
+    <div class="glass p-5 rounded-2xl border border-white/10 flex flex-col justify-between">
+        <span class="text-xs text-[#8B8B9A] uppercase tracking-wider mb-2 font-medium">Avg Finish / Quali</span>
+        <div class="text-3xl md:text-4xl font-mono font-bold text-white">
+            {{ stats.avg_finish|default:"—" }} <span class="text-lg text-[#8B8B9A]">/</span> {{ stats.avg_quali|default:"—" }}
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+    <!-- Left Column: Points Progression Chart (Takes 2 columns in lg) -->
+    <div class="lg:col-span-2 glass p-6 rounded-2xl border border-white/10">
+        <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full" style="background-color: {{ team.color_primary|default:'#E10600' }}; shadow: 0 0 8px {{ team.color_primary|default:'#E10600' }};"></span>
+            Seasonal Points Progression
+        </h3>
+        <div class="h-[300px] w-full relative">
+            <canvas id="driverProgressionChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Right Column: Additional Stats Breakdown -->
+    <div class="glass p-6 rounded-2xl border border-white/10 flex flex-col justify-between">
+        <div>
+            <h3 class="text-lg font-bold mb-5 flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-[#00D2BE]"></span>
+                Detailed Metrics
+            </h3>
+            
+            <div class="space-y-4 font-mono text-sm">
+                <div class="flex justify-between items-center py-2 border-b border-white/5">
+                    <span class="text-[#8B8B9A] font-sans">Races Entered</span>
+                    <span class="text-white font-bold">{{ stats.races }}</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-white/5">
+                    <span class="text-[#8B8B9A] font-sans">Best Finish</span>
+                    <span class="text-white font-bold">P{{ stats.best_finish }}</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-white/5">
+                    <span class="text-[#8B8B9A] font-sans">Fastest Laps</span>
+                    <span class="text-[#00D2BE] font-bold">{{ stats.fastest_laps }}</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-white/5">
+                    <span class="text-[#8B8B9A] font-sans">DNFs (Retirements)</span>
+                    <span class="text-red-400 font-bold">{{ stats.dnfs }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mini Recent Form Indicators -->
+        <div class="mt-6 border-t border-white/5 pt-4">
+            <span class="text-xs text-[#8B8B9A] uppercase tracking-wider mb-2 block font-medium">Recent Form (Last 5 races)</span>
+            <div class="flex gap-2 justify-between">
+                {% for f in stats.recent_form %}
+                <div class="flex-grow bg-black/20 rounded-lg p-2 text-center border border-white/5" title="Round {{ f.round }}">
+                    <div class="text-[10px] text-[#8B8B9A] font-mono">R{{ f.round }}</div>
+                    <div class="text-sm font-bold font-mono {% if f.position == 1 %}text-[#FFD700]{% elif f.position <= 3 %}text-amber-500{% elif f.position <= 10 %}text-green-400{% else %}text-white/60{% endif %}">
+                        P{{ f.position }}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-xs text-[#8B8B9A] py-1 font-sans">No recent race results yet.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Race-by-Race Weekend Results -->
+<div class="glass rounded-2xl border border-white/10 overflow-hidden mb-8">
+    <div class="p-6 bg-black/20 border-b border-white/10">
+        <h3 class="text-xl font-bold">2026 Race-by-Race Results Database</h3>
+        <p class="text-sm text-[#8B8B9A] mt-1">Qualifying ranks, sprint points, race finishes, and weekend tallies.</p>
+    </div>
+    
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse min-w-[700px]">
+            <thead>
+                <tr class="border-b border-white/10 bg-black/40 text-xs uppercase tracking-wider text-[#8B8B9A]">
+                    <th class="py-3.5 px-4 font-semibold text-center w-12">Rnd</th>
+                    <th class="py-3.5 px-4 font-semibold">Grand Prix</th>
+                    <th class="py-3.5 px-4 font-semibold text-center">Qualifying</th>
+                    <th class="py-3.5 px-4 font-semibold text-center">Sprint Finish</th>
+                    <th class="py-3.5 px-4 font-semibold text-center">Race Finish</th>
+                    <th class="py-3.5 px-4 font-semibold">Status / Gap</th>
+                    <th class="py-3.5 px-4 font-semibold text-right text-[#00D2BE]">Points</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-white/5 font-mono text-sm">
+                {% for entry in weekend_stats %}
+                <tr class="hover:bg-white/5 transition-colors">
+                    <td class="py-3 px-4 text-center text-white/50">{{ entry.race.round_number }}</td>
+                    <td class="py-3 px-4 font-sans font-bold text-white">
+                        <a href="{% url 'race_detail' entry.race.id %}" class="hover:text-[#00D2BE] transition-colors flex items-center gap-1.5">
+                            <span>{{ entry.race.country_emoji }}</span> {{ entry.race.name }}
+                        </a>
+                    </td>
+                    <td class="py-3 px-4 text-center">
+                        <span class="text-white/80 font-bold">P{{ entry.quali_pos }}</span>
+                    </td>
+                    <td class="py-3 px-4 text-center">
+                        {% if entry.sprint_pos != '—' %}
+                        <span class="text-white/80 font-bold">P{{ entry.sprint_pos }}</span>
+                        {% else %}
+                        <span class="text-white/30">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="py-3 px-4 text-center">
+                        <span class="{% if entry.race_pos == 1 %}text-[#FFD700] font-extrabold{% elif entry.race_pos == 2 %}text-[#C0C0C0] font-bold{% elif entry.race_pos == 3 %}text-[#CD7F32] font-bold{% elif entry.race_pos <= 10 %}text-green-400 font-bold{% else %}text-white/80{% endif %}">
+                            P{{ entry.race_pos }}
+                        </span>
+                        {% if entry.fastest_lap %}
+                        <span class="text-[10px] bg-[#00D2BE] text-black font-bold px-1 py-0.5 rounded ml-1" title="Fastest Lap">FL</span>
+                        {% endif %}
+                    </td>
+                    <td class="py-3 px-4 font-sans text-xs">
+                        {% if entry.status == 'Finished' or '+1 Lap' in entry.status or '+2 Laps' in entry.status or '+3 Laps' in entry.status %}
+                        <span class="text-white/60">{{ entry.status }}</span>
+                        {% else %}
+                        <span class="text-red-400 font-semibold">{{ entry.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="py-3 px-4 text-right font-bold text-white text-base">
+                        {% if entry.points > 0 %}
+                        +{{ entry.points|floatformat:0 }}
+                        {% else %}
+                        0
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="py-8 text-center text-[#8B8B9A] font-sans">No weekend statistics available.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/charts.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof window.F1ChartFactory === 'undefined' || window.F1ChartFactory._unavailable) {
+            console.error('F1 Chart Factory not loaded.');
+            return;
+        }
+
+        try {
+            const progData = JSON.parse('{{ progression_data|escapejs }}');
+            if (progData && progData.labels && progData.labels.length > 0) {
+                const datasets = progData.datasets.map(ds => ({
+                    label: ds.label,
+                    data: ds.data,
+                    color: ds.borderColor
+                }));
+                window.F1ChartFactory.createPointsProgression('driverProgressionChart', progData.labels, datasets);
+            }
+        } catch (e) {
+            console.error('Error rendering points progression chart:', e);
+        }
+    });
+</script>
+{% endblock %}

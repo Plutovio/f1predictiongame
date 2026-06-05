@@ -319,3 +319,27 @@ class F1PredictorTestCase(TestCase):
         self.assertEqual(h2h['user2']['username'], 'testuser2')
         self.assertEqual(h2h['user2']['total'], 0)
         self.assertEqual(h2h['user2']['wins'], 0)
+
+    def test_race_weather_activation(self):
+        """Test the has_weekend_started property and weather activation behavior."""
+        # A race in the future, way ahead of weekend
+        future_race = Race.objects.create(
+            season=2026,
+            round_number=3,
+            name='Future Grand Prix',
+            country='USA',
+            fp1_date=timezone.now() + datetime.timedelta(days=4),
+            race_date=timezone.now() + datetime.timedelta(days=6)
+        )
+        self.assertFalse(future_race.has_weekend_started)
+
+        # A race currently in the weekend (past FP1 start but before race date)
+        active_race = Race.objects.create(
+            season=2026,
+            round_number=4,
+            name='Active Grand Prix',
+            country='Italy',
+            fp1_date=timezone.now() - datetime.timedelta(hours=12),
+            race_date=timezone.now() + datetime.timedelta(days=1)
+        )
+        self.assertTrue(active_race.has_weekend_started)

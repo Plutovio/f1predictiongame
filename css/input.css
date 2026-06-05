@@ -227,12 +227,12 @@ img {
 .team-racing-bulls-text { color: #6692FF; }
 
 .team-audi {
-  --team-color: #00E701;
-  border-left: 4px solid #00E701;
+  --team-color: #F50537;
+  border-left: 4px solid #F50537;
 }
 .team-audi .team-indicator,
-.team-audi-bg { background-color: #00E701; }
-.team-audi-text { color: #00E701; }
+.team-audi-bg { background-color: #F50537; }
+.team-audi-text { color: #F50537; }
 
 .team-cadillac {
   --team-color: #FFD700;
@@ -1187,6 +1187,46 @@ img {
     opacity: 1;
     transform: none;
   }
+}
+
+/* Holographic effect for driver cards */
+.holo-card {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 50%, rgba(255,255,255,0.03) 100%);
+}
+
+.holo-card::before {
+  content: '';
+  position: absolute;
+  top: -150%;
+  left: -150%;
+  width: 300%;
+  height: 300%;
+  background: linear-gradient(
+    45deg,
+    transparent 45%,
+    rgba(255, 255, 255, 0.08) 48%,
+    rgba(255, 255, 255, 0.15) 50%,
+    rgba(255, 255, 255, 0.08) 52%,
+    transparent 55%
+  );
+  transform: rotate(-15deg);
+  transition: all 0.6s ease;
+  pointer-events: none;
+}
+
+.holo-card:hover::before {
+  top: -50%;
+  left: -50%;
+}
+
+.holo-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  border-color: var(--card-glow-color, rgba(255, 255, 255, 0.25)) !important;
+  box-shadow: 0 10px 25px -5px color-mix(in srgb, var(--card-glow-color, rgba(255,255,255,0.1)) 20%, transparent),
+              0 0 15px 0px color-mix(in srgb, var(--card-glow-color, rgba(255,255,255,0.05)) 10%, transparent);
 }
 
 /* Print styles */

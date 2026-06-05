@@ -18,7 +18,7 @@ TEAMS = [
     {"name": "Alpine F1 Team", "short_name": "Alpine", "color_primary": "#FF87BC", "color_secondary": "#4A2838", "constructor_id": "alpine"},
     {"name": "MoneyGram Haas F1 Team", "short_name": "Haas", "color_primary": "#B6BABD", "color_secondary": "#3A3B3D", "constructor_id": "haas"},
     {"name": "Racing Bulls", "short_name": "Racing Bulls", "color_primary": "#6692FF", "color_secondary": "#1E2D4F", "constructor_id": "rb"},
-    {"name": "Audi", "short_name": "Audi", "color_primary": "#00E701", "color_secondary": "#004A00", "constructor_id": "audi"},
+    {"name": "Audi", "short_name": "Audi", "color_primary": "#F50537", "color_secondary": "#0F0F0F", "constructor_id": "audi"},
     {"name": "Cadillac F1 Team", "short_name": "Cadillac", "color_primary": "#FFD700", "color_secondary": "#4A3E00", "constructor_id": "cadillac"},
 ]
 

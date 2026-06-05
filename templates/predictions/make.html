@@ -229,12 +229,13 @@
         <div class="flex-grow overflow-y-auto custom-scrollbar pr-1">
             <div class="grid grid-cols-2 gap-2 pb-2" id="available-drivers-grid">
                 {% for d in drivers %}
-                <div class="driver-chip bg-black/40 border border-white/10 rounded-lg p-3 hover:border-white/30 hover:bg-white/5 transition-all"
+                <div class="driver-chip holo-card bg-black/40 border border-white/10 rounded-lg p-3 cursor-grab active:cursor-grabbing"
                      data-driver-id="{{ d.driver.id }}"
                      data-abbreviation="{{ d.driver.abbreviation }}"
                      data-last-name="{{ d.driver.last_name }}"
                      data-team="{{ d.team_name }}"
-                     data-color="{{ d.color }}">
+                     data-color="{{ d.color }}"
+                     style="--card-glow-color: {{ d.color }};">
                     <div class="flex items-center gap-1.5 mb-1.5">
                         <div class="w-2 h-2 rounded-full flex-shrink-0" style="background-color: {{ d.color }}"></div>
                         <span class="font-mono text-xs font-bold" style="color: {{ d.color }}">{{ d.driver.abbreviation }}</span>

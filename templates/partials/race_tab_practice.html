@@ -5,9 +5,8 @@
                 <th class="py-3 px-4 font-semibold w-16 text-center">Pos</th>
                 <th class="py-3 px-4 font-semibold">Driver</th>
                 <th class="py-3 px-4 font-semibold">Team</th>
-                <th class="py-3 px-4 font-semibold text-right">Q1 Time</th>
-                <th class="py-3 px-4 font-semibold text-right">Q2 Time</th>
-                <th class="py-3 px-4 font-semibold text-right">Q3 Time</th>
+                <th class="py-3 px-4 font-semibold text-center">Laps</th>
+                <th class="py-3 px-4 font-semibold text-right">Best Lap Time</th>
             </tr>
         </thead>
         <tbody class="divide-y divide-white/5">
@@ -30,20 +29,17 @@
                     —
                     {% endif %}
                 </td>
-                <td class="py-3 px-4 text-right font-mono text-white/60">
-                    {{ result.formatted_q1|default:"—" }}
-                </td>
-                <td class="py-3 px-4 text-right font-mono text-white/60">
-                    {{ result.formatted_q2|default:"—" }}
+                <td class="py-3 px-4 text-center font-mono text-white/60">
+                    {{ result.laps_completed|default:"—" }}
                 </td>
                 <td class="py-3 px-4 text-right font-mono font-bold text-[#00D2BE]">
-                    {{ result.formatted_q3|default:"—" }}
+                    {{ result.formatted_time|default:"—" }}
                 </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="6" class="py-12 text-center text-[#8B8B9A]">
-                    <p class="text-lg">No qualifying results available yet.</p>
+                <td colspan="5" class="py-12 text-center text-[#8B8B9A]">
+                    <p class="text-lg">No session results available yet.</p>
                 </td>
             </tr>
             {% endfor %}

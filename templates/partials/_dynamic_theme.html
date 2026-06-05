@@ -1,0 +1,110 @@
+{% if section == 'style' %}
+<style>
+    :root {
+        /* Override F1 design tokens with active team's colors */
+        --f1-red: {{ active_theme_team.color_primary }};
+        --f1-red-hover: color-mix(in srgb, {{ active_theme_team.color_primary }} 80%, white);
+        --f1-red-dark: color-mix(in srgb, {{ active_theme_team.color_primary }} 80%, black);
+
+        /* Override Tailwind's default red color palette variables for dynamic styling */
+        --color-red-500: var(--f1-red) !important;
+        --color-red-600: var(--f1-red-hover) !important;
+        --color-red-700: var(--f1-red-dark) !important;
+        --color-red-400: color-mix(in srgb, var(--f1-red) 80%, white) !important;
+        --color-red-300: color-mix(in srgb, var(--f1-red) 60%, white) !important;
+    }
+
+    /* Dynamically tint the body background with the team's secondary color */
+    body {
+        background-color: color-mix(in srgb, {{ active_theme_team.color_secondary|default:'#000000' }} 8%, #15151E) !important;
+    }
+
+    /* Dynamic chromatic glass overrides */
+    .glass {
+        background: color-mix(in srgb, var(--f1-red) 3%, rgba(255, 255, 255, 0.05)) !important;
+        border-color: color-mix(in srgb, var(--f1-red) 12%, rgba(255, 255, 255, 0.08)) !important;
+    }
+
+    /* Webkit scrollbar overrides */
+    ::-webkit-scrollbar-thumb {
+        background: color-mix(in srgb, var(--f1-red) 40%, transparent) !important;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--f1-red) !important;
+    }
+
+    /* Global selection override */
+    ::selection {
+        background-color: var(--f1-red) !important;
+        color: #ffffff !important;
+    }
+
+    /* Override Tailwind utilities referencing #E10600 or red-700/red-500 */
+    .bg-\[\#E10600\] {
+        background-color: var(--f1-red) !important;
+    }
+    .text-\[\#E10600\] {
+        color: var(--f1-red) !important;
+    }
+    .border-\[\#E10600\] {
+        border-color: var(--f1-red) !important;
+    }
+    .selection\:bg-\[\#E10600\]::selection {
+        background-color: var(--f1-red) !important;
+    }
+    .hover\:bg-\[\#E10600\]:hover {
+        background-color: var(--f1-red-hover) !important;
+    }
+    .focus\:border-\[\#E10600\]:focus {
+        border-color: var(--f1-red) !important;
+    }
+    .focus\:ring-\[\#E10600\]:focus {
+        --tw-ring-color: var(--f1-red) !important;
+    }
+    .bg-\[\#E10600\]\/10 {
+        background-color: color-mix(in srgb, var(--f1-red) 10%, transparent) !important;
+    }
+    .bg-\[\#E10600\]\/20 {
+        background-color: color-mix(in srgb, var(--f1-red) 20%, transparent) !important;
+    }
+    .border-\[\#E10600\]\/20 {
+        border-color: color-mix(in srgb, var(--f1-red) 20%, transparent) !important;
+    }
+    .from-\[\#E10600\]\/10 {
+        --tw-gradient-from: color-mix(in srgb, var(--f1-red) 10%, transparent) var(--tw-gradient-from-position) !important;
+        --tw-gradient-to: color-mix(in srgb, var(--f1-red) 10%, transparent) var(--tw-gradient-to-position) !important;
+        --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+    }
+    
+    /* Overrides for standard tailwind red button hover states */
+    .hover\:bg-red-700:hover {
+        background-color: var(--f1-red-hover) !important;
+    }
+    .hover\:bg-red-50:hover {
+        background-color: color-mix(in srgb, var(--f1-red) 5%, transparent) !important;
+    }
+    .hover\:bg-red-500:hover {
+        background-color: var(--f1-red-hover) !important;
+    }
+    .hover\:text-\[\#E10600\]:hover {
+        color: var(--f1-red-hover) !important;
+    }
+    .group-hover\:text-\[\#E10600\]:is(:where(.group):hover *) {
+        color: var(--f1-red-hover) !important;
+    }
+    
+    /* Override shadow-red-500/20 glow */
+    .shadow-red-500\/20 {
+        --tw-shadow-color: color-mix(in srgb, var(--f1-red) 20%, transparent) !important;
+        box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), 0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color) !important;
+    }
+</style>
+{% elif section == 'glow' %}
+<!-- Ambient Background Glows matching the active theme team -->
+<div class="fixed top-0 right-0 w-[600px] h-[600px] rounded-full opacity-[0.04] pointer-events-none filter blur-3xl z-[-1]"
+     style="background: radial-gradient(circle, var(--f1-red), transparent 70%);">
+</div>
+<div class="fixed bottom-0 left-0 w-[700px] h-[700px] rounded-full opacity-[0.03] pointer-events-none filter blur-3xl z-[-1]"
+     style="background: radial-gradient(circle, var(--f1-red), transparent 70%);">
+</div>
+{% endif %}

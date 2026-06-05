@@ -8,47 +8,65 @@
     <p class="text-[#8B8B9A] text-lg">Team championship battle.</p>
 </div>
 
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-    {% for entry in standings %}
-    <div class="glass rounded-2xl overflow-hidden group hover:-translate-y-1 transition-transform duration-300 relative">
-        <div class="h-2 w-full" style="background-color: {{ entry.team.color_primary|default:'#FFFFFF' }};"></div>
-        <div class="p-6">
-            <div class="flex justify-between items-start mb-6">
-                <div>
-                    <h2 class="text-2xl font-bold text-white mb-1">{{ entry.team.name }}</h2>
-                    <div class="text-[#8B8B9A] text-sm flex gap-2">
-                        <span>{{ entry.drivers.0.last_name|default:"Driver 1" }}</span> &bull; 
-                        <span>{{ entry.drivers.1.last_name|default:"Driver 2" }}</span>
-                    </div>
-                </div>
-                <div class="text-4xl font-mono font-bold {% if forloop.counter == 1 %}text-[#FFD700]{% elif forloop.counter == 2 %}text-[#C0C0C0]{% elif forloop.counter == 3 %}text-[#CD7F32]{% else %}text-white/20{% endif %}">
-                    {{ entry.position|default:forloop.counter }}
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-3 gap-4 border-t border-white/10 pt-4">
-                <div class="text-center">
-                    <div class="text-xs text-[#8B8B9A] uppercase tracking-wider mb-1">Pts</div>
-                    <div class="text-xl font-mono font-bold text-[#00D2BE]">{{ entry.points|default:"0" }}</div>
-                </div>
-                <div class="text-center">
-                    <div class="text-xs text-[#8B8B9A] uppercase tracking-wider mb-1">Wins</div>
-                    <div class="text-xl font-mono font-bold text-white">{{ entry.wins|default:"0" }}</div>
-                </div>
-                <div class="text-center">
-                    <div class="text-xs text-[#8B8B9A] uppercase tracking-wider mb-1">Podiums</div>
-                    <div class="text-xl font-mono font-bold text-white">{{ entry.podiums|default:"0" }}</div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Subtle background glow based on team color -->
-        <div class="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300 pointer-events-none" style="background: radial-gradient(circle at center, {{ entry.team.color_primary|default:'#FFFFFF' }}, transparent 70%);"></div>
+<div class="flex bg-black/30 p-1 rounded-xl border border-white/10 w-fit mb-8 text-sm font-semibold">
+    <a href="{% url 'driver_standings' %}" class="text-[#8B8B9A] hover:text-white px-5 py-2 rounded-lg transition-all">Drivers</a>
+    <a href="{% url 'constructor_standings' %}" class="bg-[#E10600] text-white px-5 py-2 rounded-lg transition-all shadow-md">Constructors</a>
+</div>
+
+<div class="glass rounded-2xl overflow-hidden border border-white/10">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse min-w-[600px]">
+            <thead>
+                <tr class="border-b border-white/10 bg-black/20 text-xs uppercase tracking-wider text-[#8B8B9A]">
+                    <th class="py-4 px-6 font-semibold w-16 text-center">Pos</th>
+                    <th class="py-4 px-6 font-semibold">Constructor</th>
+                    <th class="py-4 px-6 font-semibold">Drivers Squad</th>
+                    <th class="py-4 px-6 font-semibold text-center">Wins</th>
+                    <th class="py-4 px-6 font-semibold text-center">Podiums</th>
+                    <th class="py-4 px-6 font-semibold text-right text-[#00D2BE]">Pts</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-white/5">
+                {% for entry in standings %}
+                <tr class="hover:bg-white/5 transition-colors group border-l-4" style="border-left-color: {{ entry.team.color_primary|default:'#FFFFFF' }};">
+                    <td class="py-4 px-6 text-center">
+                        <span class="text-xl font-mono font-bold {% if forloop.counter == 1 %}text-[#FFD700]{% elif forloop.counter == 2 %}text-[#C0C0C0]{% elif forloop.counter == 3 %}text-[#CD7F32]{% endif %}">{{ entry.position|default:forloop.counter }}</span>
+                    </td>
+                    <td class="py-4 px-6 font-bold text-white text-base md:text-lg">
+                        <a href="{% url 'team_detail' entry.team.id %}" class="hover:text-[#00D2BE] transition-colors">
+                            {{ entry.team.name }}
+                        </a>
+                    </td>
+                    <td class="py-4 px-6 text-sm text-[#8B8B9A] font-medium">
+                        <div class="flex items-center gap-3">
+                            {% if entry.drivers.0 %}
+                            <a href="{% url 'driver_detail' entry.drivers.0.id %}" class="hover:text-white transition-colors">
+                                {{ entry.drivers.0.first_name }} {{ entry.drivers.0.last_name }}
+                            </a>
+                            {% else %}
+                            <span>Driver 1</span>
+                            {% endif %}
+                            <span class="text-white/20">&bull;</span>
+                            {% if entry.drivers.1 %}
+                            <a href="{% url 'driver_detail' entry.drivers.1.id %}" class="hover:text-white transition-colors">
+                                {{ entry.drivers.1.first_name }} {{ entry.drivers.1.last_name }}
+                            </a>
+                            {% else %}
+                            <span>Driver 2</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td class="py-4 px-6 text-center font-mono text-white/80">{{ entry.wins|default:"0" }}</td>
+                    <td class="py-4 px-6 text-center font-mono text-white/80">{{ entry.podiums|default:"0" }}</td>
+                    <td class="py-4 px-6 text-right font-mono text-xl font-bold text-white">{{ entry.points|floatformat:0 }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="py-8 text-center text-[#8B8B9A]">No constructors found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-    {% empty %}
-    <div class="col-span-full glass p-8 text-center rounded-2xl text-[#8B8B9A]">
-        No constructor data available.
-    </div>
-    {% endfor %}
 </div>
 {% endblock %}

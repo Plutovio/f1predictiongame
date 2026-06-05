@@ -49,7 +49,7 @@
     'haas':         '#B6BABD',
     'racing-bulls': '#6692FF',
     'racing_bulls': '#6692FF',
-    'audi':         '#00E701',
+    'audi':         '#F50537',
     'cadillac':     '#FFD700',
   };
 
@@ -686,6 +686,115 @@
         },
       });
 
+      return storeChart(canvasId, chart);
+    },
+
+    /**
+     * Driver Wins vs Podiums — Grouped bar chart.
+     */
+    createDriverWinsPodiums: function (canvasId, labels, wins, podiums) {
+      var ctx = getCtx(canvasId);
+      if (!ctx) return null;
+      destroyExisting(canvasId);
+
+      var chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Wins',
+              data: wins,
+              backgroundColor: hexToRGBA(COLORS.gold, 0.85),
+              borderColor: COLORS.gold,
+              borderWidth: 1,
+              borderRadius: 4,
+              barPercentage: 0.6,
+              categoryPercentage: 0.7,
+            },
+            {
+              label: 'Podiums',
+              data: podiums,
+              backgroundColor: hexToRGBA(COLORS.accent, 0.75),
+              borderColor: COLORS.accent,
+              borderWidth: 1,
+              borderRadius: 4,
+              barPercentage: 0.6,
+              categoryPercentage: 0.7,
+            },
+          ],
+        },
+        options: {
+          scales: minimalScales({
+            x: {
+              grid: { display: false },
+              ticks: { color: COLORS.gray },
+            },
+            y: {
+              beginAtZero: true,
+              ticks: { color: COLORS.gray, precision: 0 },
+              grid: { color: 'rgba(255, 255, 255, 0.04)' },
+            },
+          }),
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: { color: COLORS.white },
+            },
+          },
+        },
+      });
+      return storeChart(canvasId, chart);
+    },
+
+    /**
+     * Constructor Points Distribution — Doughnut chart.
+     */
+    createConstructorDist: function (canvasId, labels, points, colors) {
+      var ctx = getCtx(canvasId);
+      if (!ctx) return null;
+      destroyExisting(canvasId);
+
+      var chart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              data: points,
+              backgroundColor: colors.map(function (c) {
+                return hexToRGBA(c, 0.85);
+              }),
+              borderColor: COLORS.surface,
+              borderWidth: 2,
+              hoverOffset: 8,
+            },
+          ],
+        },
+        options: {
+          cutout: '60%',
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: {
+                color: COLORS.white,
+                usePointStyle: true,
+                padding: 12,
+              },
+            },
+            tooltip: {
+              callbacks: {
+                label: function (ctx) {
+                  var total = ctx.dataset.data.reduce(function (a, b) { return a + b; }, 0);
+                  var val = ctx.parsed;
+                  var pct = total > 0 ? Math.round((val / total) * 100) : 0;
+                  return ctx.label + ': ' + val + ' pts (' + pct + '%)';
+                },
+              },
+            },
+          },
+        },
+      });
       return storeChart(canvasId, chart);
     },
 

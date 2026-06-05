@@ -171,6 +171,13 @@ class Race(models.Model):
         return self.race_date > timezone.now()
 
     @property
+    def has_weekend_started(self):
+        """Check if the race weekend has started (starts on Friday)."""
+        from datetime import timedelta
+        weekend_start = self.fp1_date if self.fp1_date else (self.race_date - timedelta(days=2))
+        return timezone.now() >= weekend_start
+
+    @property
     def country_emoji(self):
         """Return flag emoji for common F1 countries."""
         flags = {
@@ -224,6 +231,10 @@ class Race(models.Model):
 
 
 SESSION_TYPE_CHOICES = [
+    ('fp1', 'Free Practice 1'),
+    ('fp2', 'Free Practice 2'),
+    ('fp3', 'Free Practice 3'),
+    ('sprint_qualifying', 'Sprint Shootout'),
     ('qualifying', 'Qualifying'),
     ('sprint', 'Sprint'),
     ('race', 'Race'),

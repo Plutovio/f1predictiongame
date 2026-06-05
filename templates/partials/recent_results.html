@@ -14,9 +14,17 @@
                 {% if result.position == 1 %}🥇{% elif result.position == 2 %}🥈{% elif result.position == 3 %}🥉{% else %}{{ result.position }}{% endif %}
             </div>
             <div class="flex-grow min-w-0">
-                <div class="font-bold text-white truncate text-sm sm:text-base">{{ result.driver.first_name }} {{ result.driver.last_name }}</div>
+                <div class="font-bold text-white truncate text-sm sm:text-base">
+                    <a href="{% url 'driver_detail' result.driver.id %}" class="hover:text-[#00D2BE] transition-colors">
+                        {{ result.driver.first_name }} {{ result.driver.last_name }}
+                    </a>
+                </div>
                 <div class="text-xs text-[#8B8B9A] truncate" style="color: {{ result.team.color_primary|default:'#8B8B9A' }};">
-                    {{ result.team.name|default:"F1 Team" }}
+                    {% if result.team %}
+                    <a href="{% url 'team_detail' result.team.id %}" class="hover:underline">{{ result.team.name }}</a>
+                    {% else %}
+                    F1 Team
+                    {% endif %}
                 </div>
             </div>
             <div class="font-mono text-sm text-[#00D2BE] font-bold whitespace-nowrap">

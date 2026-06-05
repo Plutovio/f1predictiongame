@@ -59,7 +59,7 @@ TEAMS_2026 = [
     {'name': 'Alpine', 'short_name': 'Alpine', 'color_primary': '#FF87BC', 'color_secondary': '#0093CC', 'constructor_id': 'alpine'},
     {'name': 'Haas F1 Team', 'short_name': 'Haas', 'color_primary': '#B6BABD', 'color_secondary': '#E10600', 'constructor_id': 'haas'},
     {'name': 'Racing Bulls', 'short_name': 'Racing Bulls', 'color_primary': '#6692FF', 'color_secondary': '#FFFFFF', 'constructor_id': 'rb'},
-    {'name': 'Audi', 'short_name': 'Audi', 'color_primary': '#00E701', 'color_secondary': '#000000', 'constructor_id': 'audi'},
+    {'name': 'Audi', 'short_name': 'Audi', 'color_primary': '#F50537', 'color_secondary': '#000000', 'constructor_id': 'audi'},
     {'name': 'Cadillac F1 Team', 'short_name': 'Cadillac', 'color_primary': '#FFD700', 'color_secondary': '#1C1C1C', 'constructor_id': 'cadillac'},
 ]
 
@@ -231,6 +231,10 @@ class FastF1SyncService:
     def sync_session_results(self, race, session_type):
         """Sync results for a specific session from FastF1."""
         session_map = {
+            'fp1': 'FP1',
+            'fp2': 'FP2',
+            'fp3': 'FP3',
+            'sprint_qualifying': 'SQ',
             'qualifying': 'Q',
             'sprint': 'S',
             'race': 'R',
@@ -258,24 +262,85 @@ class FastF1SyncService:
             logger.info(f"No results available for {race.name} {session_type}")
             return 0
 
-        count = 0
-        with transaction.atomic():
+        # Check if we need to calculate positions from laps (e.g. for practices or if positions are all NaN)
+        needs_lap_calc = session_type in ('fp1', 'fp2', 'fp3', 'sprint_qualifying')
+        
+        if not needs_lap_calc:
+            all_pos_nan = True
+            for _, row in results.iterrows():
+                pos = row.get('Position')
+                if pos is not None and str(pos) != 'nan':
+                    all_pos_nan = False
+                    break
+            if all_pos_nan:
+                needs_lap_calc = True
+
+        driver_results = []
+        if needs_lap_calc and session.laps is not None and not session.laps.empty:
+            import pandas as pd
             for _, row in results.iterrows():
                 abbr = str(row.get('Abbreviation', '')).strip()
                 if not abbr:
                     continue
+                try:
+                    driver_laps = session.laps.pick_drivers(abbr)
+                    laps_count = len(driver_laps)
+                    fl = driver_laps.pick_fastest()
+                    best_time = fl['LapTime'] if fl is not None and not pd.isnull(fl['LapTime']) else None
+                except Exception:
+                    best_time = None
+                    laps_count = 0
+                
+                driver_results.append({
+                    'row': row,
+                    'abbr': abbr,
+                    'best_time': best_time,
+                    'laps_count': laps_count,
+                })
+            
+            # Sort by best_time, putting NaT/None at the end
+            driver_results.sort(key=lambda x: (x['best_time'] is None, x['best_time']))
+            
+            # Assign calculated positions
+            for idx, item in enumerate(driver_results, 1):
+                item['position'] = idx
+        else:
+            # Standard path: use official Position
+            for _, row in results.iterrows():
+                abbr = str(row.get('Abbreviation', '')).strip()
+                if not abbr:
+                    continue
+                pos = row.get('Position')
+                if pos is None or str(pos) == 'nan':
+                    continue
+                
+                laps_val = row.get('Laps')
+                try:
+                    laps_count = int(float(laps_val)) if laps_val is not None and str(laps_val) != 'nan' else 0
+                except Exception:
+                    laps_count = 0
 
-                # Find driver in database
+                driver_results.append({
+                    'row': row,
+                    'abbr': abbr,
+                    'position': int(float(pos)),
+                    'best_time': None,
+                    'laps_count': laps_count,
+                })
+
+        count = 0
+        with transaction.atomic():
+            for item in driver_results:
+                abbr = item['abbr']
+                row = item['row']
+                position = item['position']
+                laps_completed = item['laps_count']
+                
                 try:
                     driver = Driver.objects.get(abbreviation=abbr)
                 except Driver.DoesNotExist:
                     logger.warning(f"Driver {abbr} not found in database, skipping")
                     continue
-
-                position = row.get('Position')
-                if position is None or (hasattr(position, '__float__') and str(position) == 'nan'):
-                    continue
-                position = int(float(position))
 
                 grid = row.get('GridPosition')
                 if grid is not None and str(grid) != 'nan':
@@ -289,9 +354,14 @@ class FastF1SyncService:
                 points = Decimal(str(float(points)))
 
                 status = str(row.get('Status', 'Finished'))
-                time_str = ''
-                if 'Time' in row and row['Time'] is not None and str(row['Time']) != 'NaT':
-                    time_str = str(row['Time'])
+                
+                # For practice, use calculated best_time if available, otherwise fallback
+                if item.get('best_time') is not None:
+                    time_str = str(item['best_time'])
+                else:
+                    time_str = ''
+                    if 'Time' in row and row['Time'] is not None and str(row['Time']) != 'NaT':
+                        time_str = str(row['Time'])
 
                 result_data = {
                     'position': position,
@@ -299,7 +369,8 @@ class FastF1SyncService:
                     'points': points,
                     'status': status,
                     'time': time_str,
-                    'fastest_lap': bool(row.get('FastestLap', False)),
+                    'fastest_lap': position == 1 if needs_lap_calc else bool(row.get('FastestLap', False)),
+                    'laps_completed': laps_completed,
                 }
 
                 # Add qualifying times if applicable
@@ -323,9 +394,14 @@ class FastF1SyncService:
     def sync_race_all_sessions(self, race):
         """Sync all session results for a race."""
         total = 0
-        total += self.sync_session_results(race, 'qualifying')
+        total += self.sync_session_results(race, 'fp1')
         if race.has_sprint:
+            total += self.sync_session_results(race, 'sprint_qualifying')
             total += self.sync_session_results(race, 'sprint')
+        else:
+            total += self.sync_session_results(race, 'fp2')
+            total += self.sync_session_results(race, 'fp3')
+        total += self.sync_session_results(race, 'qualifying')
         total += self.sync_session_results(race, 'race')
         return total
 
@@ -527,30 +603,4 @@ class FastF1SyncService:
             logger.warning(f"Headshot sync failed: {e}")
 
 
-    # ──────────────────────────────────────────────
-    # WEATHER DATA
-    # ──────────────────────────────────────────────
 
-    def get_session_weather(self, race, session_type='race'):
-        """Get weather data for a race session."""
-        session_map = {'qualifying': 'Q', 'sprint': 'S', 'race': 'R'}
-        ff1_id = session_map.get(session_type, 'R')
-
-        try:
-            ff1 = _ensure_fastf1()
-            session = ff1.get_session(self.season, race.round_number, ff1_id)
-            session.load(telemetry=False, laps=False, messages=False)
-            weather = session.weather_data
-
-            if weather is not None and not weather.empty:
-                return {
-                    'air_temp': round(weather['AirTemp'].mean(), 1),
-                    'track_temp': round(weather['TrackTemp'].mean(), 1),
-                    'humidity': round(weather['Humidity'].mean(), 1),
-                    'wind_speed': round(weather['WindSpeed'].mean(), 1),
-                    'rainfall': bool(weather['Rainfall'].any()),
-                }
-        except Exception as e:
-            logger.warning(f"Weather fetch failed for {race.name}: {e}")
-
-        return None

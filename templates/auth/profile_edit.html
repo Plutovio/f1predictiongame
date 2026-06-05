@@ -14,35 +14,70 @@
     </div>
 
     <div class="glass rounded-2xl p-8 border border-white/10">
-        <form method="post" action="{% url 'profile_edit' %}" class="space-y-6">
+        <form method="post" action="{% url 'profile_edit' %}" enctype="multipart/form-data" class="space-y-6">
             {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+            <div class="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-sm">
+                {{ form.non_field_errors }}
+            </div>
+            {% endif %}
             
             <div class="border-b border-white/10 pb-6">
                 <h3 class="text-lg font-semibold mb-4 text-white">Basic Information</h3>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label class="block text-sm font-medium text-[#8B8B9A] mb-1.5">Username</label>
-                        <input type="text" name="username" value="{{ user.username }}" class="w-full bg-black/40 border border-white/10 rounded-lg py-2 px-3 text-white focus:border-[#E10600] focus:ring-1 focus:ring-[#E10600] outline-none">
+                        <label for="{{ form.first_name.id_for_label }}" class="block text-sm font-semibold text-white/80 mb-1.5">First Name</label>
+                        {{ form.first_name }}
+                        {% if form.first_name.errors %}
+                        <p class="text-xs text-red-400 mt-1 font-semibold">{{ form.first_name.errors.as_text }}</p>
+                        {% endif %}
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-[#8B8B9A] mb-1.5">Email Address</label>
-                        <input type="email" name="email" value="{{ user.email }}" class="w-full bg-black/40 border border-white/10 rounded-lg py-2 px-3 text-white focus:border-[#E10600] focus:ring-1 focus:ring-[#E10600] outline-none">
+                        <label for="{{ form.last_name.id_for_label }}" class="block text-sm font-semibold text-white/80 mb-1.5">Last Name</label>
+                        {{ form.last_name }}
+                        {% if form.last_name.errors %}
+                        <p class="text-xs text-red-400 mt-1 font-semibold">{{ form.last_name.errors.as_text }}</p>
+                        {% endif %}
                     </div>
+                </div>
+                
+                <div class="mt-4">
+                    <label for="{{ form.email.id_for_label }}" class="block text-sm font-semibold text-white/80 mb-1.5">Email Address</label>
+                    {{ form.email }}
+                    {% if form.email.errors %}
+                    <p class="text-xs text-red-400 mt-1 font-semibold">{{ form.email.errors.as_text }}</p>
+                    {% endif %}
                 </div>
             </div>
             
             <div class="border-b border-white/10 pb-6">
                 <h3 class="text-lg font-semibold mb-4 text-white">Preferences</h3>
                 
-                <div>
-                    <label class="block text-sm font-medium text-[#8B8B9A] mb-1.5">Favorite Team</label>
-                    <select name="favorite_team" class="w-full md:w-1/2 bg-black/40 border border-white/10 rounded-lg py-2 px-3 text-white focus:border-[#E10600] focus:ring-1 focus:ring-[#E10600] outline-none appearance-none">
-                        <option value="">None</option>
-                        <option value="redbull">Red Bull Racing</option>
-                        <option value="ferrari" selected>Ferrari</option>
-                        <option value="mercedes">Mercedes</option>
-                    </select>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="{{ form.favorite_team.id_for_label }}" class="block text-sm font-semibold text-white/80 mb-1.5">Favorite Team</label>
+                        {{ form.favorite_team }}
+                        {% if form.favorite_team.errors %}
+                        <p class="text-xs text-red-400 mt-1 font-semibold">{{ form.favorite_team.errors.as_text }}</p>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <label for="{{ form.avatar.id_for_label }}" class="block text-sm font-semibold text-white/80 mb-1.5">Avatar Image</label>
+                        {{ form.avatar }}
+                        {% if form.avatar.errors %}
+                        <p class="text-xs text-red-400 mt-1 font-semibold">{{ form.avatar.errors.as_text }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <label for="{{ form.bio.id_for_label }}" class="block text-sm font-semibold text-white/80 mb-1.5">Bio</label>
+                    {{ form.bio }}
+                    {% if form.bio.errors %}
+                    <p class="text-xs text-red-400 mt-1 font-semibold">{{ form.bio.errors.as_text }}</p>
+                    {% endif %}
                 </div>
             </div>
             

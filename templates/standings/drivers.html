@@ -21,6 +21,11 @@
     </div>
 </div>
 
+<div class="flex bg-black/30 p-1 rounded-xl border border-white/10 w-fit mb-6 text-sm font-semibold">
+    <a href="{% url 'driver_standings' %}" class="bg-[#E10600] text-white px-5 py-2 rounded-lg transition-all shadow-md">Drivers</a>
+    <a href="{% url 'constructor_standings' %}" class="text-[#8B8B9A] hover:text-white px-5 py-2 rounded-lg transition-all">Constructors</a>
+</div>
+
 <div class="glass rounded-2xl overflow-hidden border border-white/10">
     <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse min-w-[600px]">
