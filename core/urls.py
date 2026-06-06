@@ -4,7 +4,7 @@ F1 Predictor — Core URL Configuration
 from django.urls import path
 from core.views.dashboard import dashboard, dashboard_standings_partial, dashboard_activity_partial, dashboard_recent_results_partial
 from core.views.standings import driver_standings, constructor_standings, driver_detail, team_detail
-from core.views.races import race_calendar, race_detail, race_tab_partial
+from core.views.races import race_calendar, race_detail, race_tab_partial, sync_race_results_view
 from core.views.predictions import make_prediction, prediction_results, prediction_leaderboard, user_predictions_list
 from core.views.analytics import analytics
 
@@ -27,6 +27,7 @@ urlpatterns = [
     path('races/', race_calendar, name='race_calendar'),
     path('races/<int:race_id>/', race_detail, name='race_detail'),
     path('races/<int:race_id>/tab/<str:tab>/', race_tab_partial, name='race_tab'),
+    path('races/<int:race_id>/sync/', sync_race_results_view, name='sync_race_results'),
 
     # Predictions
     path('predict/<int:race_id>/', make_prediction, name='make_prediction'),

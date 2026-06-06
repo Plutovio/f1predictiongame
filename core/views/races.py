@@ -1,7 +1,13 @@
 """
 F1 Predictor — Race Views
 """
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.admin.views.decorators import staff_member_required
+from django.views.decorators.http import require_POST
+from django.contrib import messages
+from core.services.fastf1_sync import FastF1SyncService
+from core.services.scoring import PredictionScorer
+from core.services.standings import StandingsService
 from django.utils import timezone
 from core.models import Race, SessionResult, Driver
 
@@ -146,3 +152,35 @@ def race_tab_partial(request, race_id, tab):
 
 
     return render(request, 'partials/race_tab_race.html', {'race': race, 'results': []})
+
+
+@staff_member_required
+@require_POST
+def sync_race_results_view(request, race_id):
+    """Staff-only view to sync race results on demand."""
+    race = get_object_or_404(Race, id=race_id)
+    try:
+        service = FastF1SyncService(race.season)
+        count = service.sync_race_all_sessions(race, force=True)
+        
+        # Mark race as completed if race results were successfully fetched
+        has_race_results = SessionResult.objects.filter(race=race, session_type='race').exists()
+        if has_race_results:
+            race.status = 'completed'
+            race.is_completed = True
+            race.save(update_fields=['status', 'is_completed'])
+        
+        # Score predictions for this race
+        scorer = PredictionScorer()
+        for session_type in ['qualifying', 'sprint', 'race']:
+            scorer.score_race_predictions(race, session_type)
+        
+        # Create standings snapshot
+        standings = StandingsService(race.season)
+        standings.create_standings_snapshot(race.round_number)
+        
+        messages.success(request, f"Successfully synced {count} results for {race.name}.")
+    except Exception as e:
+        messages.error(request, f"Failed to sync results: {e}")
+        
+    return redirect('race_detail', race_id=race.id)

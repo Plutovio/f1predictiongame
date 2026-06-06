@@ -228,7 +228,7 @@ class FastF1SyncService:
     # RESULTS SYNC
     # ──────────────────────────────────────────────
 
-    def sync_session_results(self, race, session_type):
+    def sync_session_results(self, race, session_type, force=False):
         """Sync results for a specific session from FastF1."""
         session_map = {
             'fp1': 'FP1',
@@ -248,11 +248,35 @@ class FastF1SyncService:
         if session_type == 'sprint' and not race.has_sprint:
             return 0
 
+        # Optimization: Skip session if its scheduled date is in the future
+        session_date_map = {
+            'fp1': race.fp1_date,
+            'fp2': race.fp2_date,
+            'fp3': race.fp3_date,
+            'sprint_qualifying': race.sprint_qualifying_date,
+            'qualifying': race.qualifying_date,
+            'sprint': race.sprint_date,
+            'race': race.race_date,
+        }
+        session_date = session_date_map.get(session_type)
+        if not force and session_date and timezone.now() < session_date:
+            logger.info(f"Skipping {session_type} for {race.name} because session date {session_date} is in the future.")
+            return 0
+
+        # Optimization: Skip if we already have 19+ results for this session in the DB
+        if not force:
+            existing_count = SessionResult.objects.filter(race=race, session_type=session_type).count()
+            if existing_count >= 19:
+                logger.info(f"Skipping {session_type} for {race.name} because {existing_count} results already exist in DB.")
+                return 0
+
         try:
             ff1 = _ensure_fastf1()
             logger.info(f"Loading {session_type} results for {race.name}...")
             session = ff1.get_session(self.season, race.round_number, ff1_session_id)
-            session.load(telemetry=False, weather=False, messages=False)
+            # Optimization: only load laps if we need to calculate positions from laps (practices and sprint qualifying)
+            needs_lap_calc = session_type in ('fp1', 'fp2', 'fp3', 'sprint_qualifying')
+            session.load(telemetry=False, weather=False, messages=False, laps=needs_lap_calc)
             results = session.results
         except Exception as e:
             logger.warning(f"Could not load {session_type} for {race.name}: {e}")
@@ -391,18 +415,18 @@ class FastF1SyncService:
         logger.info(f"  Synced {count} {session_type} results for {race.name}")
         return count
 
-    def sync_race_all_sessions(self, race):
+    def sync_race_all_sessions(self, race, force=False):
         """Sync all session results for a race."""
         total = 0
-        total += self.sync_session_results(race, 'fp1')
+        total += self.sync_session_results(race, 'fp1', force=force)
         if race.has_sprint:
-            total += self.sync_session_results(race, 'sprint_qualifying')
-            total += self.sync_session_results(race, 'sprint')
+            total += self.sync_session_results(race, 'sprint_qualifying', force=force)
+            total += self.sync_session_results(race, 'sprint', force=force)
         else:
-            total += self.sync_session_results(race, 'fp2')
-            total += self.sync_session_results(race, 'fp3')
-        total += self.sync_session_results(race, 'qualifying')
-        total += self.sync_session_results(race, 'race')
+            total += self.sync_session_results(race, 'fp2', force=force)
+            total += self.sync_session_results(race, 'fp3', force=force)
+        total += self.sync_session_results(race, 'qualifying', force=force)
+        total += self.sync_session_results(race, 'race', force=force)
         return total
 
     def sync_latest_results(self):

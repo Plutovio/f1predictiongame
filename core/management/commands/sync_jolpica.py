@@ -83,19 +83,23 @@ class Command(BaseCommand):
             # Sync a specific round
             rounds_to_sync = [options['round']]
         elif options['all_rounds']:
-            # Sync all completed rounds
+            # Sync all completed/active rounds
             now = timezone.now()
-            races = Race.objects.filter(season=season, race_date__lt=now).order_by('round_number')
-            rounds_to_sync = list(races.values_list('round_number', flat=True))
+            all_races = Race.objects.filter(season=season).order_by('round_number')
+            rounds_to_sync = [
+                r.round_number for r in all_races
+                if r.race_date < now or r.has_weekend_started
+            ]
         else:
-            # Default: sync the most recently completed races that lack results
+            # Default: sync active/completed rounds that lack race results
             now = timezone.now()
             rounds_to_sync = []
-            races = Race.objects.filter(season=season, race_date__lt=now).order_by('round_number')
-            for race in races:
-                has_results = SessionResult.objects.filter(race=race, session_type='race').exists()
-                if not has_results:
-                    rounds_to_sync.append(race.round_number)
+            all_races = Race.objects.filter(season=season).order_by('round_number')
+            for race in all_races:
+                if race.race_date < now or race.has_weekend_started:
+                    has_results = SessionResult.objects.filter(race=race, session_type='race').exists()
+                    if not has_results:
+                        rounds_to_sync.append(race.round_number)
 
         self.stdout.write(f'  Rounds to sync: {rounds_to_sync or "none needed"}')
 

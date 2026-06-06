@@ -118,10 +118,23 @@
             </div>
         </div>
         
-        <div class="bg-black/40 rounded-xl p-4 border border-white/5 text-center min-w-[150px]">
-            <div class="text-sm text-[#8B8B9A] uppercase tracking-wider mb-1">Race Date</div>
-            <div class="text-xl font-bold text-white" x-text="formatSession('{{ race.race_date|date:'Y-m-d\TH:i:s\Z' }}').date">{{ race.race_date|date:"d M Y"|default:"TBD" }}</div>
-            <div class="text-[#00D2BE] font-mono text-sm mt-1" x-text="formatSession('{{ race.race_date|date:'Y-m-d\TH:i:s\Z' }}').time">{{ race.race_date|date:"H:i" }} UTC</div>
+        <div class="flex flex-col sm:flex-row items-center gap-4">
+            {% if user.is_staff %}
+            <form action="{% url 'sync_race_results' race.id %}" method="post" class="w-full sm:w-auto">
+                {% csrf_token %}
+                <button type="submit" 
+                        class="w-full sm:w-auto px-4 py-3 bg-[#00D2BE] hover:bg-[#00b2a2] text-black font-bold rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#00D2BE]/10"
+                        onclick="this.disabled=true; this.innerHTML='<svg class=\'animate-spin h-5 w-5 text-black\' viewBox=\'0 0 24 24\'><circle class=\'opacity-25\' cx=\'12\' cy=\'12\' r=\'10\' stroke=\'currentColor\' stroke-width=\'4\' fill=\'none\'></circle><path class=\'opacity-75\' fill=\'currentColor\' d=\'M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z\'></path></svg> Syncing...'; this.form.submit();">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H17.5"></path></svg>
+                    Sync Results
+                </button>
+            </form>
+            {% endif %}
+            <div class="bg-black/40 rounded-xl p-4 border border-white/5 text-center min-w-[150px] w-full sm:w-auto">
+                <div class="text-sm text-[#8B8B9A] uppercase tracking-wider mb-1">Race Date</div>
+                <div class="text-xl font-bold text-white" x-text="formatSession('{{ race.race_date|date:'Y-m-d\TH:i:s\Z' }}').date">{{ race.race_date|date:"d M Y"|default:"TBD" }}</div>
+                <div class="text-[#00D2BE] font-mono text-sm mt-1" x-text="formatSession('{{ race.race_date|date:'Y-m-d\TH:i:s\Z' }}').time">{{ race.race_date|date:"H:i" }} UTC</div>
+            </div>
         </div>
     </div>
     <!-- Circuit map placeholder background -->
