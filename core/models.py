@@ -215,19 +215,34 @@ class Race(models.Model):
 
     def qualifying_locked(self):
         """Check if qualifying predictions should be locked."""
+        if self.fp1_date and timezone.now() >= self.fp1_date:
+            return True
         if self.qualifying_date:
             return timezone.now() >= self.qualifying_date
         return False
 
     def sprint_locked(self):
         """Check if sprint predictions should be locked."""
+        if self.fp1_date and timezone.now() >= self.fp1_date:
+            return True
         if self.sprint_date:
             return timezone.now() >= self.sprint_date
         return False
 
     def race_locked(self):
         """Check if race predictions should be locked."""
+        if self.fp1_date and timezone.now() >= self.fp1_date:
+            return True
         return timezone.now() >= self.race_date
+
+    @property
+    def is_locked(self):
+        """Check if the entire race weekend predictions are locked (starts at FP1)."""
+        if self.fp1_date:
+            return timezone.now() >= self.fp1_date
+        if self.qualifying_date:
+            return timezone.now() >= self.qualifying_date
+        return False
 
 
 SESSION_TYPE_CHOICES = [

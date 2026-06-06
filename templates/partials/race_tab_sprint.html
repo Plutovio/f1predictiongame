@@ -1,4 +1,17 @@
 <div class="overflow-x-auto">
+    {% if user.is_staff %}
+    <div class="flex justify-end mb-4">
+        <form action="{% url 'sync_race_results' race.id %}?session={{ session_type|default:'sprint' }}" method="post">
+            {% csrf_token %}
+            <button type="submit" 
+                    class="px-3 py-1.5 bg-[#00D2BE] hover:bg-[#00b2a2] text-black text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 shadow-md"
+                    onclick="this.disabled=true; this.innerHTML='<svg class=\'animate-spin h-3.5 w-3.5 text-black\' viewBox=\'0 0 24 24\'><circle class=\'opacity-25\' cx=\'12\' cy=\'12\' r=\'10\' stroke=\'currentColor\' stroke-width=\'4\' fill=\'none\'></circle><path class=\'opacity-75\' fill=\'currentColor\' d=\'M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z\'></path></svg> Syncing...'; this.form.submit();">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H17.5"></path></svg>
+                Sync {{ session_name|default:"Sprint" }}
+            </button>
+        </form>
+    </div>
+    {% endif %}
     <table class="w-full text-left border-collapse min-w-[600px]">
         <thead>
             <tr class="border-b border-white/10 bg-black/20 text-xs uppercase tracking-wider text-[#8B8B9A]">

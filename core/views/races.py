@@ -105,51 +105,50 @@ def race_tab_partial(request, race_id, tab):
             race=race, session_type='fp1'
         ).order_by('position').select_related('driver')
         return render(request, 'partials/race_tab_practice.html', {
-            'race': race, 'results': results, 'session_name': 'Free Practice 1'
+            'race': race, 'results': results, 'session_name': 'Free Practice 1', 'session_type': 'fp1'
         })
     elif tab == 'fp2':
         results = SessionResult.objects.filter(
             race=race, session_type='fp2'
         ).order_by('position').select_related('driver')
         return render(request, 'partials/race_tab_practice.html', {
-            'race': race, 'results': results, 'session_name': 'Free Practice 2'
+            'race': race, 'results': results, 'session_name': 'Free Practice 2', 'session_type': 'fp2'
         })
     elif tab == 'fp3':
         results = SessionResult.objects.filter(
             race=race, session_type='fp3'
         ).order_by('position').select_related('driver')
         return render(request, 'partials/race_tab_practice.html', {
-            'race': race, 'results': results, 'session_name': 'Free Practice 3'
+            'race': race, 'results': results, 'session_name': 'Free Practice 3', 'session_type': 'fp3'
         })
     elif tab == 'sprint_qualifying':
         results = SessionResult.objects.filter(
             race=race, session_type='sprint_qualifying'
         ).order_by('position').select_related('driver')
         return render(request, 'partials/race_tab_qualifying.html', {
-            'race': race, 'results': results, 'session_name': 'Sprint Shootout'
+            'race': race, 'results': results, 'session_name': 'Sprint Shootout', 'session_type': 'sprint_qualifying'
         })
     elif tab == 'qualifying':
         results = SessionResult.objects.filter(
             race=race, session_type='qualifying'
         ).order_by('position').select_related('driver')
         return render(request, 'partials/race_tab_qualifying.html', {
-            'race': race, 'results': results
+            'race': race, 'results': results, 'session_name': 'Qualifying', 'session_type': 'qualifying'
         })
     elif tab == 'sprint':
         results = SessionResult.objects.filter(
             race=race, session_type='sprint'
         ).order_by('position').select_related('driver')
         return render(request, 'partials/race_tab_sprint.html', {
-            'race': race, 'results': results
+            'race': race, 'results': results, 'session_name': 'Sprint', 'session_type': 'sprint'
         })
     elif tab == 'race':
         results = SessionResult.objects.filter(
             race=race, session_type='race'
         ).order_by('position').select_related('driver')
         return render(request, 'partials/race_tab_race.html', {
-            'race': race, 'results': results
+            'race': race, 'results': results, 'session_name': 'Race', 'session_type': 'race'
         })
-
 
     return render(request, 'partials/race_tab_race.html', {'race': race, 'results': []})
 
@@ -159,28 +158,48 @@ def race_tab_partial(request, race_id, tab):
 def sync_race_results_view(request, race_id):
     """Staff-only view to sync race results on demand."""
     race = get_object_or_404(Race, id=race_id)
+    session_type = request.GET.get('session')
     try:
         service = FastF1SyncService(race.season)
-        count = service.sync_race_all_sessions(race, force=True)
-        
-        # Mark race as completed if race results were successfully fetched
-        has_race_results = SessionResult.objects.filter(race=race, session_type='race').exists()
-        if has_race_results:
-            race.status = 'completed'
-            race.is_completed = True
-            race.save(update_fields=['status', 'is_completed'])
-        
-        # Score predictions for this race
-        scorer = PredictionScorer()
-        for session_type in ['qualifying', 'sprint', 'race']:
-            scorer.score_race_predictions(race, session_type)
-        
-        # Create standings snapshot
-        standings = StandingsService(race.season)
-        standings.create_standings_snapshot(race.round_number)
-        
-        messages.success(request, f"Successfully synced {count} results for {race.name}.")
+        if session_type:
+            count = service.sync_session_results(race, session_type, force=True)
+            
+            # Score predictions if applicable
+            if session_type in ['qualifying', 'sprint', 'race']:
+                scorer = PredictionScorer()
+                scorer.score_race_predictions(race, session_type)
+                
+                if session_type == 'race':
+                    race.status = 'completed'
+                    race.is_completed = True
+                    race.save(update_fields=['status', 'is_completed'])
+                
+                # Create standings snapshot
+                standings = StandingsService(race.season)
+                standings.create_standings_snapshot(race.round_number)
+                
+            messages.success(request, f"Successfully synced {session_type.upper()} results ({count} records) for {race.name}.")
+        else:
+            count = service.sync_race_all_sessions(race, force=True)
+            
+            # Mark race as completed if race results were successfully fetched
+            has_race_results = SessionResult.objects.filter(race=race, session_type='race').exists()
+            if has_race_results:
+                race.status = 'completed'
+                race.is_completed = True
+                race.save(update_fields=['status', 'is_completed'])
+            
+            # Score predictions for this race
+            scorer = PredictionScorer()
+            for st in ['qualifying', 'sprint', 'race']:
+                scorer.score_race_predictions(race, st)
+            
+            # Create standings snapshot
+            standings = StandingsService(race.season)
+            standings.create_standings_snapshot(race.round_number)
+            
+            messages.success(request, f"Successfully synced all session results ({count} records) for {race.name}.")
     except Exception as e:
         messages.error(request, f"Failed to sync results: {e}")
         
-    return redirect('race_detail', race_id=race.id)
+    return redirect(f"/races/{race.id}/?tab={session_type or 'schedule'}")
