@@ -4,7 +4,7 @@
 
 {% block content %}
 <div x-data="{
-    tab: 'schedule',
+    tab: '{{ active_tab|default:"schedule" }}',
     timeMode: 'track',
     country: '{{ race.country|escapejs }}',
     city: '{{ race.city|escapejs }}',
@@ -308,56 +308,41 @@
                 {% endif %}
             </div>
             
-            <!-- HTMX-loaded tabs -->
+            <!-- Tab contents (rendered server-side for maximum reliability and speed) -->
             
             <!-- FP1 -->
             <div x-show="tab === 'fp1'" x-transition.opacity x-cloak>
-                <div hx-get="{% url 'race_tab' race.id 'fp1' %}" hx-trigger="intersect once">
-                    <p class="text-center text-[#8B8B9A] py-8">Results not available yet.</p>
-                </div>
+                {% include "partials/race_tab_practice.html" with results=fp1_results session_name="Free Practice 1" session_type="fp1" %}
             </div>
 
             {% if race.has_sprint %}
                 <!-- Sprint Qualifying -->
                 <div x-show="tab === 'sprint_qualifying'" x-transition.opacity x-cloak>
-                    <div hx-get="{% url 'race_tab' race.id 'sprint_qualifying' %}" hx-trigger="intersect once">
-                        <p class="text-center text-[#8B8B9A] py-8">Results not available yet.</p>
-                    </div>
+                    {% include "partials/race_tab_qualifying.html" with results=sprint_qualifying_results session_name="Sprint Shootout" session_type="sprint_qualifying" %}
                 </div>
                 <!-- Sprint -->
                 <div x-show="tab === 'sprint'" x-transition.opacity x-cloak>
-                    <div hx-get="{% url 'race_tab' race.id 'sprint' %}" hx-trigger="intersect once">
-                        <p class="text-center text-[#8B8B9A] py-8">Results not available yet.</p>
-                    </div>
+                    {% include "partials/race_tab_sprint.html" with results=sprint_results session_name="Sprint" session_type="sprint" %}
                 </div>
             {% else %}
                 <!-- FP2 -->
                 <div x-show="tab === 'fp2'" x-transition.opacity x-cloak>
-                    <div hx-get="{% url 'race_tab' race.id 'fp2' %}" hx-trigger="intersect once">
-                        <p class="text-center text-[#8B8B9A] py-8">Results not available yet.</p>
-                    </div>
+                    {% include "partials/race_tab_practice.html" with results=fp2_results session_name="Free Practice 2" session_type="fp2" %}
                 </div>
                 <!-- FP3 -->
                 <div x-show="tab === 'fp3'" x-transition.opacity x-cloak>
-                    <div hx-get="{% url 'race_tab' race.id 'fp3' %}" hx-trigger="intersect once">
-                        <p class="text-center text-[#8B8B9A] py-8">Results not available yet.</p>
-                    </div>
+                    {% include "partials/race_tab_practice.html" with results=fp3_results session_name="Free Practice 3" session_type="fp3" %}
                 </div>
             {% endif %}
 
             <!-- Qualifying -->
             <div x-show="tab === 'qualifying'" x-transition.opacity x-cloak>
-                <div hx-get="{% url 'race_tab' race.id 'qualifying' %}" hx-trigger="intersect once" hx-indicator="#q-indicator">
-                    <div id="q-indicator" class="flex justify-center py-12"><svg class="animate-spin h-8 w-8 text-[#E10600]" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg></div>
-                    <p class="text-center text-[#8B8B9A] py-8">Results not available yet.</p>
-                </div>
+                {% include "partials/race_tab_qualifying.html" with results=qualifying_results session_name="Qualifying" session_type="qualifying" %}
             </div>
 
             <!-- Race Results -->
             <div x-show="tab === 'race'" x-transition.opacity x-cloak>
-                <div hx-get="{% url 'race_tab' race.id 'race' %}" hx-trigger="intersect once">
-                    <p class="text-center text-[#8B8B9A] py-8">Results not available yet.</p>
-                </div>
+                {% include "partials/race_tab_race.html" with results=race_results session_name="Race" session_type="race" %}
             </div>
 
         </div>
