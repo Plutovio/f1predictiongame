@@ -372,6 +372,8 @@ class FastF1SyncService:
                 grid = row.get('GridPosition')
                 if grid is not None and str(grid) != 'nan':
                     grid = int(float(grid))
+                    if grid <= 0:
+                        grid = None
                 else:
                     grid = None
 
