@@ -297,7 +297,10 @@ class FastF1SyncService:
                     all_pos_nan = False
                     break
             if all_pos_nan:
-                needs_lap_calc = True
+                # We can only calculate from laps if we actually loaded them (FP sessions and sprint qualifying)
+                laps_actually_loaded = session_type in ('fp1', 'fp2', 'fp3', 'sprint_qualifying')
+                if laps_actually_loaded:
+                    needs_lap_calc = True
 
         driver_results = []
         if needs_lap_calc and session.laps is not None and not session.laps.empty:
