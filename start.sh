@@ -27,9 +27,9 @@ if [ -n "$DJANGO_SUPERUSER_USERNAME" ] && [ -n "$DJANGO_SUPERUSER_PASSWORD" ]; t
     python -c "import django; django.setup(); from django.contrib.auth.models import User; import os; User.objects.filter(username=os.environ['DJANGO_SUPERUSER_USERNAME']).exists() or User.objects.create_superuser(os.environ['DJANGO_SUPERUSER_USERNAME'], os.environ.get('DJANGO_SUPERUSER_EMAIL', 'admin@example.com'), os.environ['DJANGO_SUPERUSER_PASSWORD'])" || echo "Superuser creation skipped or failed"
 fi
 
-# 3. Sync race results from Jolpica API (lightweight HTTP, no FastF1 download)
-echo "[3/4] Syncing F1 race results from Jolpica API..."
-python manage.py sync_jolpica --all-rounds || echo "      [WARN] Sync had issues — continuing startup"
+# 3. Sync race results from Jolpica API in the background (prevents blocking Gunicorn startup)
+echo "[3/4] Syncing F1 race results from Jolpica API in the background..."
+python manage.py sync_jolpica --all-rounds > /tmp/sync.log 2>&1 &
 echo "      Done."
 
 # 4. Start the production web server
