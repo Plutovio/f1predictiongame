@@ -138,6 +138,24 @@ class Command(BaseCommand):
 
         for r in RACES_2026:
             race_dt = datetime.fromisoformat(r["date"].replace("Z", "+00:00"))
+            
+            # Estimate session dates based on main race date (in UTC)
+            from datetime import timedelta
+            if r["sprint"]:
+                fp1_dt = race_dt - timedelta(days=2, hours=6)
+                sq_dt = race_dt - timedelta(days=2, hours=2)
+                s_dt = race_dt - timedelta(days=1, hours=6)
+                q_dt = race_dt - timedelta(days=1, hours=2)
+                fp2_dt = None
+                fp3_dt = None
+            else:
+                fp1_dt = race_dt - timedelta(days=2, hours=6)
+                fp2_dt = race_dt - timedelta(days=2, hours=2)
+                fp3_dt = race_dt - timedelta(days=1, hours=5)
+                q_dt = race_dt - timedelta(days=1, hours=2)
+                sq_dt = None
+                s_dt = None
+
             race, created = Race.objects.update_or_create(
                 season=2026,
                 round_number=r["round"],
@@ -150,6 +168,12 @@ class Command(BaseCommand):
                     "has_sprint": r["sprint"],
                     "status": "completed" if race_dt < timezone.now() else "upcoming",
                     "is_completed": race_dt < timezone.now(),
+                    "fp1_date": fp1_dt,
+                    "fp2_date": fp2_dt,
+                    "fp3_date": fp3_dt,
+                    "qualifying_date": q_dt,
+                    "sprint_qualifying_date": sq_dt,
+                    "sprint_date": s_dt,
                 },
             )
             status = "Created" if created else "Updated"

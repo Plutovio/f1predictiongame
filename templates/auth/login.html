@@ -37,7 +37,7 @@
                 <div>
                     <div class="flex justify-between items-center mb-1.5">
                         <label for="{{ form.password.id_for_label }}" class="block text-sm font-semibold text-white/80">Password</label>
-                        <a href="#" class="text-xs text-[#00D2BE] hover:text-white transition-colors">Forgot password?</a>
+                        <a href="{% url 'password_reset' %}" class="text-xs text-[#00D2BE] hover:text-white transition-colors">Forgot password?</a>
                     </div>
                     {{ form.password }}
                     {% if form.password.errors %}
